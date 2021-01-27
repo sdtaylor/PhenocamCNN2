@@ -11,31 +11,54 @@ from tensorflow.keras.utils import to_categorical
 
 from sklearn.utils.class_weight import compute_sample_weight
 
-from tools.image_tools import generate_random_crops
+from tools.image_tools import load_imgs_from_df
 
-image_dir = 'data/phenocam_images/'
-train_sample_size = 10000
+image_dir = 'data/phenocam_train_images/'
+train_sample_size = 200
 random_image_crops = 5
 crop_size = 400
 
 validation_fraction = 0.2
-target_size = (224,224)
+target_size = (64,64)
 batch_size  = 100
 
-image_info = pd.read_csv('first_test_cnn/crop_only.csv')
-
-print('sample sizes: {s}'.format(s=image_info.field_status_crop.value_counts()))
+image_info = pd.read_csv('train_image_annotation/imageant_session2.csv')
 
 
-# Setup one hot encoded class columns in the dataframe 
-class_names = image_info.field_status_crop.unique()
-class_names.sort()
-class_names = ['class_'+str(c) for c in class_names]
+def encode_column(class_column, class_prefix):
+    """
+    From a single pandas column with categorial values 0-N return a numpy array
+    representing the one-hot encoding of those values, and a list of class names
+    corresponding to the values
+    class names are the prefix + the category number ie:
+    croptype_0, croptype_1, etc.
 
-one_hot_encoded = to_categorical(image_info.field_status_crop.values)
+    Parameters
+    ----------
+    class_column : pandas series
+        The category column.
+    class_prefix : str
+        prefix for the class names.
 
-for name_i, n in enumerate(class_names):
-    image_info[n] = one_hot_encoded[:,name_i]
+    Returns
+    -------
+    dict
+        {'class_names':list of class names, 'class_values':np.array}.
+
+    """
+    class_names = class_column.unique()
+    class_names.sort()
+    class_names = [class_prefix+'-'+str(c) for c in class_names]
+
+    class_values = to_categorical(class_column.values)
+    
+    assert len(class_names) == class_values.shape[1], 'unique class values not matching final shape'
+
+    return {'class_names':class_names, 'class_values':class_values}
+
+
+
+
 
 ########################################
 # Setup validation split
@@ -60,19 +83,26 @@ assert validation_images.index.nunique() == len(validation_images), 'duplicates 
 
 # expand training by random sampling, weighted so that low sample size category images are repeated.
 # This makes it so sample sizes are even in training
-train_images['sample_weight'] = compute_sample_weight('balanced', train_images.field_status_crop)
+
+# Use the unique combinations across the 3 categories. 
+train_images['unique_category'] = train_images.dominant_cover.astype(str) + train_images.crop_type.astype(str) + train_images.crop_status.astype(str)
+train_images['sample_weight'] = compute_sample_weight('balanced', train_images.unique_category)
 train_images = train_images.sample(n=train_sample_size, replace=True, weights='sample_weight')
 
-# Generate numpy arrays of all images. Each image is repeated several times
-train_x, train_y, = generate_random_crops(df = train_images, x_col='file', y_col=class_names,
-                                          n_random_crops_per_image=random_image_crops, crop_dim = crop_size,
-                                          crop_height=0.5,
-                                          img_dir = image_dir, final_target_size=target_size, data_format='channels_last')
+# get class arrays across the 3 categories
+train_image_class_arrays = []
+for class_category_i, class_category in enumerate(['dominant_cover','crop_type','crop_status']):
+    train_image_class_arrays.append(encode_column(train_images[class_category], class_category))
 
-val_x, val_y, = generate_random_crops(df = validation_images, x_col='file', y_col=class_names,
-                                      n_random_crops_per_image=3, crop_dim = crop_size,
-                                      crop_height=0.5,
-                                      img_dir = image_dir, final_target_size=target_size, data_format='channels_last')
+
+
+
+# Generate numpy arrays of all images. Each image is repeated several times
+train_x = load_imgs_from_df(train_images, x_col='file', img_dir=image_dir, 
+                            target_size=target_size, data_format='channels_last')
+
+# just 1 for the moment
+train_y = [cat['class_values'] for cat in train_image_class_arrays]
 
 def scale_images(x):
     x = x / 127.5
@@ -96,7 +126,7 @@ train_generator = ImageDataGenerator(preprocessing_function=scale_images,
                                          )
 
 # No random transformations for test images                                        
-val_x = scale_images(val_x)
+#val_x = scale_images(val_x)
 #validation_generator  = ImageDataGenerator(preprocessing_function=scale_images).flow(
 #                                         x = val_x,
 #                                         y = val_y,
@@ -109,33 +139,36 @@ val_x = scale_images(val_x)
 base_model = keras.applications.VGG16(
     weights=None,  # Load weights pre-trained on ImageNet.
     input_shape= target_size + (3,),
-    include_top=True,
-    classes=len(class_names)
+    include_top=False,
 )  # Do not include the ImageNet classifier at the top.
+
+def build_category_model(prior_step, class_n, name):
+    x = keras.layers.GlobalMaxPooling2D()(prior_step)
+    x = keras.layers.Dense(128, activation = 'relu')(x)
+    x = keras.layers.Dropout(0.5)(x)
+    x = keras.layers.Dense(128, activation = 'relu')(x)
+    x = keras.layers.Dropout(0.5)(x)
+    x = keras.layers.Dense(class_n,  activation = 'softmax', name=name)(x)
+    return(x)
+
+
+dominant_cover_model = build_category_model(base_model.output, 6, 'dominant_cover')
+crop_type_model      = build_category_model(base_model.output, 7, 'crop_type')
+crop_status_model    = build_category_model(base_model.output, 7, 'crop_status')
+
+full_model = keras.Model(base_model.input, [dominant_cover_model,crop_type_model,crop_status_model])
 
 
 # Freeze the base_model
 #base_model.trainable = False
 
-#original_weights = base_model.get_weights()
-
-#x = base_model.output
-#x = keras.layers.GlobalMaxPooling2D()(x)
-#x = keras.layers.Dense(128, activation = 'relu')(x)
-#x = keras.layers.Dropout(0.5)(x)
-#x = keras.layers.Dense(128, activation = 'relu')(x)
-#x = keras.layers.Dropout(0.5)(x)
-#x = keras.layers.Dense(len(class_names),  activation = 'softmax')(x)
-
-#model = keras.Model(base_model.input, x)
-
-base_model.compile(optimizer = keras.optimizers.Adam(lr=0.0001),
+full_model.compile(optimizer = keras.optimizers.Adam(lr=0.0001),
               loss='categorical_crossentropy',metrics=[keras.metrics.CategoricalAccuracy()])
-print(base_model.summary())
+print(full_model.summary())
 
-base_model.fit(train_generator,
-          validation_data= (val_x,val_y),
+full_model.fit(train_x, train_y,
+         # validation_data= (val_x,val_y),
           #class_weight = weights,
-          steps_per_epoch=len(train_generator), # fit() should be detecting this, but whatevs
+          #steps_per_epoch=len(train_generator), # fit() should be detecting this, but whatevs
           #validation_freq = 2,
-          epochs=30)
+          epochs=1)
