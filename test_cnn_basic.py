@@ -1,63 +1,30 @@
 from glob import glob
 import re
+from math import ceil
 
 import pandas as pd
 import numpy as np
 
 from tensorflow import keras
 from tensorflow.keras.layers import Dense, Input, Dropout, Flatten
-from keras_preprocessing.image import ImageDataGenerator
+from tensorflow.keras.layers.experimental.preprocessing import Rescaling
 from tensorflow.keras.utils import to_categorical
 
 from sklearn.utils.class_weight import compute_sample_weight
 
 from tools.image_tools import load_imgs_from_df
+from tools.keras_tools import MultiOutputDataGenerator
 
 image_dir = 'data/phenocam_train_images/'
-train_sample_size = 200
+train_sample_size = 100
 random_image_crops = 5
 crop_size = 400
 
 validation_fraction = 0.2
-target_size = (64,64)
-batch_size  = 100
+target_size = (32,32)
+batch_size  = 10
 
 image_info = pd.read_csv('train_image_annotation/imageant_session2.csv')
-
-
-def encode_column(class_column, class_prefix):
-    """
-    From a single pandas column with categorial values 0-N return a numpy array
-    representing the one-hot encoding of those values, and a list of class names
-    corresponding to the values
-    class names are the prefix + the category number ie:
-    croptype_0, croptype_1, etc.
-
-    Parameters
-    ----------
-    class_column : pandas series
-        The category column.
-    class_prefix : str
-        prefix for the class names.
-
-    Returns
-    -------
-    dict
-        {'class_names':list of class names, 'class_values':np.array}.
-
-    """
-    class_names = class_column.unique()
-    class_names.sort()
-    class_names = [class_prefix+'-'+str(c) for c in class_names]
-
-    class_values = to_categorical(class_column.values)
-    
-    assert len(class_names) == class_values.shape[1], 'unique class values not matching final shape'
-
-    return {'class_names':class_names, 'class_values':class_values}
-
-
-
 
 
 ########################################
@@ -89,27 +56,17 @@ train_images['unique_category'] = train_images.dominant_cover.astype(str) + trai
 train_images['sample_weight'] = compute_sample_weight('balanced', train_images.unique_category)
 train_images = train_images.sample(n=train_sample_size, replace=True, weights='sample_weight')
 
-# get class arrays across the 3 categories
-train_image_class_arrays = []
-for class_category_i, class_category in enumerate(['dominant_cover','crop_type','crop_status']):
-    train_image_class_arrays.append(encode_column(train_images[class_category], class_category))
 
-
-
-
-# Generate numpy arrays of all images. Each image is repeated several times
+# Generate numpy arrays of all images. Each image is repeated several times from the sampling
 train_x = load_imgs_from_df(train_images, x_col='file', img_dir=image_dir, 
                             target_size=target_size, data_format='channels_last')
 
-# just 1 for the moment
-train_y = [cat['class_values'] for cat in train_image_class_arrays]
+# Multiple output model means a dictionary for the targets
+# these names match the final model layer names
+train_y ={c:to_categorical(train_images[c]) for c in ['dominant_cover','crop_type','crop_status']}
 
-def scale_images(x):
-    x = x / 127.5
-    x = x - 1
-    return x 
 
-train_generator = ImageDataGenerator(preprocessing_function=scale_images,
+train_generator = MultiOutputDataGenerator(preprocessing_function=None, # scaling done via Rescale layer
                                      vertical_flip = True,
                                      horizontal_flip = True,
                                      rotation_range = 45,
@@ -136,9 +93,15 @@ train_generator = ImageDataGenerator(preprocessing_function=scale_images,
 
 # Example from https://riptutorial.com/keras/example/32608/transfer-learning-using-keras-and-vgg
 #base_model = VGG16_Places365(
+
+
+#input_layer =  Rescaling(scale = 1./255, input_shape=target_size + (3,))
+#input_layer = Input(tensor=input_layer)
+
 base_model = keras.applications.VGG16(
     weights=None,  # Load weights pre-trained on ImageNet.
     input_shape= target_size + (3,),
+    #input_tensor = input_layer,
     include_top=False,
 )  # Do not include the ImageNet classifier at the top.
 
@@ -162,13 +125,13 @@ full_model = keras.Model(base_model.input, [dominant_cover_model,crop_type_model
 # Freeze the base_model
 #base_model.trainable = False
 
-full_model.compile(optimizer = keras.optimizers.Adam(lr=0.0001),
+full_model.compile(optimizer = keras.optimizers.Adam(lr=0.001),
               loss='categorical_crossentropy',metrics=[keras.metrics.CategoricalAccuracy()])
 print(full_model.summary())
 
-full_model.fit(train_x, train_y,
+full_model.fit(train_generator,
          # validation_data= (val_x,val_y),
           #class_weight = weights,
-          #steps_per_epoch=len(train_generator), # fit() should be detecting this, but whatevs
+          steps_per_epoch=ceil(train_sample_size/batch_size), # this is not automatic cause of custom generator
           #validation_freq = 2,
-          epochs=1)
+          epochs=2)
