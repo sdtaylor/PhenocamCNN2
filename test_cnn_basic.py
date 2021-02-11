@@ -26,8 +26,12 @@ batch_size  = 10
 
 image_info = pd.read_csv('train_image_annotation/imageant_session2.csv')
 
+# The different targest and their number of classes
+output_classes = {'dominant_cover' : 6,
+                  'crop_type'      : 7,
+                  'crop_status'    : 7}
 
-########################################
+#-------------------------
 # Setup validation split
 total_validation_images = int(len(image_info) * validation_fraction)
 
@@ -48,6 +52,7 @@ assert train_images.validation_site.sum() == 0, 'validation sites in training da
 assert train_images.index.nunique() == len(train_images), 'duplicates in training dataframe'
 assert validation_images.index.nunique() == len(validation_images), 'duplicates in validation dataframe'
 
+#-------------------------
 # expand training by random sampling, weighted so that low sample size category images are repeated.
 # This makes it so sample sizes are even in training
 
@@ -56,14 +61,14 @@ train_images['unique_category'] = train_images.dominant_cover.astype(str) + trai
 train_images['sample_weight'] = compute_sample_weight('balanced', train_images.unique_category)
 train_images = train_images.sample(n=train_sample_size, replace=True, weights='sample_weight')
 
-
+#-------------------------
 # Generate numpy arrays of all images. Each image is repeated several times from the sampling
 train_x = load_imgs_from_df(train_images, x_col='file', img_dir=image_dir, 
                             target_size=target_size, data_format='channels_last')
 
 # Multiple output model means a dictionary for the targets
 # these names match the final model layer names
-train_y ={c:to_categorical(train_images[c]) for c in ['dominant_cover','crop_type','crop_status']}
+train_y = {c:to_categorical(train_images[c]) for c in output_classes.keys()}
 
 
 train_generator = MultiOutputDataGenerator(preprocessing_function=None, # scaling done via Rescale layer
@@ -82,26 +87,22 @@ train_generator = MultiOutputDataGenerator(preprocessing_function=None, # scalin
                                          batch_size = batch_size,
                                          )
 
-# No random transformations for test images                                        
-#val_x = scale_images(val_x)
-#validation_generator  = ImageDataGenerator(preprocessing_function=scale_images).flow(
-#                                         x = val_x,
-#                                         y = val_y,
-#                                         shuffle = False,
-#                                         batch_size = batch_size,
-#                                         )
+# small sample for testing                                         
+validation_images = validation_images.sample(500)                      
+val_x =  load_imgs_from_df(validation_images, x_col='file', img_dir=image_dir, 
+                            target_size=target_size, data_format='channels_last')
+val_y = {c:to_categorical(validation_images[c]) for c in output_classes.keys()}
 
-# Example from https://riptutorial.com/keras/example/32608/transfer-learning-using-keras-and-vgg
-#base_model = VGG16_Places365(
-
-
-#input_layer =  Rescaling(scale = 1./255, input_shape=target_size + (3,))
-#input_layer = Input(tensor=input_layer)
+#-------------------------
+# The keras model
+#-------------------------
+input_layer = Input(shape=target_size + (3,))
+input_layer =  Rescaling(scale = 1./255)(input_layer)
 
 base_model = keras.applications.VGG16(
     weights=None,  # Load weights pre-trained on ImageNet.
-    input_shape= target_size + (3,),
-    #input_tensor = input_layer,
+    #input_shape= target_size + (3,),
+    input_tensor = input_layer,
     include_top=False,
 )  # Do not include the ImageNet classifier at the top.
 
@@ -114,23 +115,16 @@ def build_category_model(prior_step, class_n, name):
     x = keras.layers.Dense(class_n,  activation = 'softmax', name=name)(x)
     return(x)
 
+sub_models = [build_category_model(base_model.output, class_n, name) for name, class_n in output_classes.items()]
 
-dominant_cover_model = build_category_model(base_model.output, 6, 'dominant_cover')
-crop_type_model      = build_category_model(base_model.output, 7, 'crop_type')
-crop_status_model    = build_category_model(base_model.output, 7, 'crop_status')
-
-full_model = keras.Model(base_model.input, [dominant_cover_model,crop_type_model,crop_status_model])
-
-
-# Freeze the base_model
-#base_model.trainable = False
+full_model = keras.Model(base_model.input, sub_models)
 
 full_model.compile(optimizer = keras.optimizers.Adam(lr=0.001),
               loss='categorical_crossentropy',metrics=[keras.metrics.CategoricalAccuracy()])
 print(full_model.summary())
 
 full_model.fit(train_generator,
-         # validation_data= (val_x,val_y),
+          validation_data= (val_x,val_y),
           #class_weight = weights,
           steps_per_epoch=ceil(train_sample_size/batch_size), # this is not automatic cause of custom generator
           #validation_freq = 2,
