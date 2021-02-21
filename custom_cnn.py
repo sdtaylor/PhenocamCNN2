@@ -16,21 +16,23 @@ from tools.image_tools import load_imgs_from_df
 from tools.keras_tools import MultiOutputDataGenerator
 
 image_dir = 'data/phenocam_train_images/'
-train_sample_size = 500
+train_sample_size = 20000
 random_image_crops = 5
 crop_size = 400
 
 validation_fraction = 0.2
-target_size = (128,128)
+target_size = (512,512)
 batch_size  = 50
+
 
 image_info = pd.read_csv('train_image_annotation/imageant_session2.csv')
 
 # The different targest and their number of classes
-#output_classes = {'dominant_cover' : 6,
-#                  'crop_type'      : 7,
-#                  'crop_status'    : 7}
-output_classes = {'dominant_cover' : 6}
+output_classes = {'dominant_cover' : 6,
+                  'crop_type'      : 7,
+                  'crop_status'    : 7}
+#output_classes = {'dominant_cover' : 6}
+
 
 #-------------------------
 # Setup validation split
@@ -101,38 +103,34 @@ val_y = {c:to_categorical(validation_images[c]) for c in output_classes.keys()}
 base_model = keras.Sequential()
 base_model.add(Input(shape=target_size + (3,)))
 base_model.add(Rescaling(scale = 1./127.5))
-base_model.add(keras.layers.Conv2D(5, kernel_size=(3, 3), padding='same',
-                        name='image_array', activation='relu'))
-base_model.add(keras.layers.BatchNormalization())
-base_model.add(keras.layers.Conv2D(10, kernel_size=(3, 3), padding='same',
-                        strides=(2, 2), activation='relu'))
-base_model.add(keras.layers.BatchNormalization())
-base_model.add(keras.layers.Dropout(.25))
 base_model.add(keras.layers.Conv2D(16, kernel_size=(3, 3), padding='same',
-                        strides=(2, 2), activation='relu'))
-base_model.add(keras.layers.BatchNormalization())
+                        strides=(2, 2), activation='relu', name='conv1a'))
 base_model.add(keras.layers.Conv2D(16, kernel_size=(3, 3), padding='same',
-                        strides=(2, 2), activation='relu'))
-base_model.add(keras.layers.BatchNormalization())
-base_model.add(keras.layers.Dropout(.25))
+                        strides=(2, 2), activation='relu', name='conv1b'))
+base_model.add(keras.layers.MaxPooling2D((2,2), strides=(2,2), padding='same', name='max_pool1'))
+
 base_model.add(keras.layers.Conv2D(32, kernel_size=(3, 3), padding='same',
-                        strides=(2, 2), activation='relu'))
-base_model.add(keras.layers.BatchNormalization())
+                        strides=(2, 2), activation='relu', name='conv2a'))
+base_model.add(keras.layers.Conv2D(32, kernel_size=(3, 3), padding='same',
+                        strides=(2, 2), activation='relu', name='conv2b'))
+base_model.add(keras.layers.MaxPooling2D((2,2), strides=(2,2), padding='same', name='max_pool2'))
+
 base_model.add(keras.layers.Conv2D(64, kernel_size=(3, 3), padding='same',
-                        strides=(2, 2), activation='relu'))
-base_model.add(keras.layers.BatchNormalization())
-base_model.add(keras.layers.Conv2D(64, kernel_size=(3, 3),
-                        strides=(2, 2), padding='same'))
-base_model.add(keras.layers.BatchNormalization())
+                        strides=(2, 2), activation='relu', name='conv3a'))
+base_model.add(keras.layers.Conv2D(64, kernel_size=(3, 3), padding='same',
+                        strides=(2, 2), activation='relu', name='conv3b'))
+base_model.add(keras.layers.MaxPooling2D((2,2), strides=(2,2), padding='same', name='max_pool3'))
 
-
+base_model.add(keras.layers.Dense(512, activation='relu', name='main_dense1'))
+base_model.add(keras.layers.Dropout(0.5, name='main_dropout1'))
+base_model.add(keras.layers.Dense(512, activation='relu', name='main_dense2'))
+base_model.add(keras.layers.Flatten(name='main_flatten'))
 
 def build_category_model(prior_step, class_n, name):
-    x = keras.layers.Flatten()(prior_step) 
-    x = keras.layers.Dense(1028, activation = 'relu')(x)
-    x = keras.layers.Dropout(0.5)(x)
-    x = keras.layers.Dense(1028, activation = 'relu')(x)
-    x = keras.layers.Dropout(0.5)(x)
+    x = keras.layers.Dense(256, activation = 'relu', name=name+'_dense1')(prior_step)
+    x = keras.layers.Dropout(0.5, name=name+'_dropout1')(x)
+    x = keras.layers.Dense(256, activation = 'relu', name=name+'_dense2')(x)
+    x = keras.layers.Dropout(0.5, name=name+'_dropout2')(x)
     x = keras.layers.Dense(class_n,  activation = 'softmax', name=name)(x)
     return(x)
 
