@@ -24,6 +24,7 @@ validation_fraction = 0.2
 target_size = (512,512)
 batch_size  = 50
 
+minimum_unique_categories = 30
 
 image_info = pd.read_csv('train_image_annotation/imageant_session2.csv')
 
@@ -33,6 +34,15 @@ output_classes = {'dominant_cover' : 6,
                   'crop_status'    : 7}
 #output_classes = {'dominant_cover' : 6}
 
+#-------------------------
+# some combinations of categories only have a handful of images
+# just gonna drop those
+class_counts = image_info.groupby(['dominant_cover','crop_type','crop_status']).size().reset_index(name='n')
+class_counts['keep'] = class_counts.n.apply(lambda x: True if x>=minimum_unique_categories else False)
+class_counts.drop(columns='n', inplace=True)
+
+image_info = image_info.merge(class_counts, how='left', on=['dominant_cover','crop_type','crop_status'])
+image_info = image_info[image_info.keep]
 
 #-------------------------
 # Setup validation split
@@ -78,11 +88,11 @@ train_generator = MultiOutputDataGenerator(preprocessing_function=None, # scalin
                                      vertical_flip = True,
                                      horizontal_flip = True,
                                      rotation_range = 45,
-                                     #zoom_range = 0.25,
+                                     zoom_range = 0.25,
                                      width_shift_range = [-0.25,0,0.25],
                                      height_shift_range = [-0.25,0,0.25],
-                                     shear_range = 45,
-                                     #brightness_range = [0.2,1],
+                                     #shear_range = 45,
+                                     brightness_range = [0.5,1.5],
                                      fill_mode='reflect').flow(
                                          x = train_x,
                                          y = train_y,
