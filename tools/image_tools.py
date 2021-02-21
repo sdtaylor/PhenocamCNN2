@@ -36,7 +36,7 @@ def load_imgs_from_df(df, x_col, img_dir, target_size, data_format='channels_las
     """
     
     n_images = len(df)
-    img_array = np.zeros((n_images,) + target_size + (3,))
+    img_array = np.zeros((n_images,) + target_size + (3,), dtype=np.int32)
     
     for i,j in enumerate(df[x_col]):
         img = load_img(img_dir + j,
