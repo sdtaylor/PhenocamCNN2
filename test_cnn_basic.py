@@ -15,13 +15,16 @@ from sklearn.utils.class_weight import compute_sample_weight
 from tools.image_tools import load_imgs_from_df
 from tools.keras_tools import MultiOutputDataGenerator
 
+from sklearn.model_selection import ParameterGrid
+# to change from param grid testing. train_sample_size, target_size, epochs
+
 image_dir = 'data/phenocam_train_images/'
 train_sample_size = 20000
 random_image_crops = 5
 crop_size = 400
 
 validation_fraction = 0.2
-target_size = (128,128)
+target_size = (224,224)
 batch_size  = 50
 
 image_info = pd.read_csv('train_image_annotation/imageant_session2.csv')
@@ -120,13 +123,31 @@ sub_models = [build_category_model(base_model.output, class_n, name) for name, c
 
 full_model = keras.Model(base_model.input, sub_models)
 
-full_model.compile(optimizer = keras.optimizers.Adam(lr=0.0001),
+#-------------------------
+# save the initial random weights so they can be reloaded
+init_weights_file = 'data/initial_weights.h5'
+full_model.save_weights(init_weights_file)
+
+optimizer_param_grid = ParameterGrid({'lr':[0.01,0.001,0.0001],'epsilon':[1.0,0.1,0.01]})
+
+#for i, optimzer_params in enumerate(optimizer_param_grid):
+optimzer_params = dict(lr=0.01, epsilon=0.1)
+
+full_model.load_weights(init_weights_file)
+full_model.compile(optimizer = keras.optimizers.Adam(lr=optimzer_params['lr'], epsilon=optimzer_params['epsilon']),
               loss='categorical_crossentropy',metrics=[keras.metrics.CategoricalAccuracy()])
 print(full_model.summary())
 
 full_model.fit(train_generator,
-          validation_data= (val_x,val_y),
-          #class_weight = weights,
-          steps_per_epoch=ceil(train_sample_size/batch_size), # this is not automatic cause of custom generator
-          epochs=30,
-          use_multiprocessing=False)
+               validation_data= (val_x,val_y),
+               #class_weight = weights,
+               steps_per_epoch=ceil(train_sample_size/batch_size), # this is not automatic cause of custom generator
+               epochs=50,
+               use_multiprocessing=False)
+
+trace_history = pd.DataFrame(full_model.history.history)
+trace_history['lr'] = optimzer_params['lr']
+trace_history['epsilon'] = optimzer_params['epsilon']
+
+trace_history.to_csv('data/vgg16_v1_50epochs_trace.csv', index=False)
+full_model.save_weights('data/vgg16_v1_50epochs.h5')
