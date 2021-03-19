@@ -40,3 +40,31 @@ class MultiOutputDataGenerator(ImageDataGenerator):
                 i += target_length
 
             yield flowx, target_dict
+            
+            
+def keras_predict(df, filename_col, model, target_size, preprocess_func,
+                  image_dir=None, predict_prob=True, chunksize=500):
+    """
+    Load a keras model and predict on all images specified in the filename_col,
+    of df
+
+    """
+    df = df.copy()
+    df['class'] = 'a' # need a dummy class column to pass to the generator
+    
+    g  = ImageDataGenerator(preprocessing_function=preprocess_func).flow_from_dataframe(
+                                         df, 
+                                         directory = image_dir,
+                                         target_size = target_size,
+                                         batch_size = chunksize,
+                                         shuffle = False,
+                                         x_col = filename_col,
+                                         y_col = 'class'
+                                         )
+    
+    predictions = model.predict(g, workers=32, verbose=1)
+    
+    if predict_prob:
+        return predictions
+    else:
+        return np.argmax(predictions, 1)
