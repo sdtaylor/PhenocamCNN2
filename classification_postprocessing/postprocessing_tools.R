@@ -127,7 +127,8 @@ prediction_df_is_wide = function(df){
 # Go to a long data.frame with 'category','class','probability' columns.
 prediction_df_wide_to_long = function(df){
   df %>%
-    pivot_longer(c(-phenocam_name,-date,-year,-starts_with('transition-')), names_sep='-', names_to=c('category','class'), values_to='probability')
+    pivot_longer(c(starts_with('dominant_cover-'),starts_with('crop_type-'), starts_with('crop_status-')), 
+                 names_sep='-', names_to=c('category','class'), values_to='probability')
 }
 
 # Go to a wide data.frame with columns for every category/class. eg. columns of 'dominant_cover-vegetation','dominant_cover-residue', etc.
