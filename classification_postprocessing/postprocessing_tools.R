@@ -58,6 +58,18 @@ fill_blurry_dates_with_na = function(df){
     select(-is_blurry)
 }
 
+# Remove the blurry class from the predictions, and normalize the remaining
+# ones to sum to 1 again.
+remove_blurry_class_and_normalize = function(df){
+  if(!prediction_df_is_long(df)) stop('prediction data.frame must be long format for blurry category removal')
+  
+  df %>%
+    filter(class!='blurry') %>%
+    group_by(phenocam_name, date, category) %>%
+    mutate(probability = probability/sum(probability)) %>%
+    ungroup()
+}
+
 # Interpolate missing dates with surrounding probabilites for each class/category.
 # If a gap is greater than max_gap_size than it will be left as NA
 gap_fill_na_predictions = function(df, max_gap_size){
