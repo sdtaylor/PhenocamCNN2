@@ -14,4 +14,7 @@ phenocam_sites = phenocam_sites %>%
          site_years > 2) %>%
   filter((roi_id %% 1000) == 0) # No experimental ROIs, which usually end in X001
 
+phenocam_sites = phenocam_sites %>%
+  filter(!phenocam_name %in% ag_sites_to_exclude)
+
 write_csv(phenocam_sites, phenocam_site_file)

@@ -92,9 +92,6 @@ for(full_file_path in all_gcc_files){
     bind_rows(site_transition)
 }
 
-# Get rid of most pastures
-all_site_periods = all_site_periods %>%
-  filter(!phenocam_name %in% pasture_cameras)
 
 # for each site, pick at most X random images from each period type
 #
