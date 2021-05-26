@@ -8,13 +8,16 @@ phenocam_gcc_folder = 'data/phenocam_gcc/'
 phenocam_training_image_folder = 'data/phenocam_train_images/'
 
 # 
-extra_training_image_folder = 'data/extra_phenocam_train_images/'
 
 # the number of images sampled per site/year/period
 # for initial training data gathering
 random_images_per_period = 50
 
 training_images_download_list = 'data/images_for_annotation.csv'
+
+extra_images_hours_to_keep = c(9, 10, 11, 12, 13, 14, 15)
+extra_image_list = 'data/extra_images_for_fitting.csv'
+extra_training_image_folder = 'data/extra_phenocam_train_images/'
 
 # ag sites which are actually pastures
 .pasture_cameras  = c("uiefprairie2", 
