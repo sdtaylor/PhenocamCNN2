@@ -95,7 +95,7 @@ validation_images = all_image_info[all_image_info.validation_site]
 # Add in a random sample of remaining images to get to the total validation fraction
 # images from validation sites excluded here by setting weight to 0
 all_image_info['validation_weight'] = all_image_info.validation_site.apply(lambda val_site: 0 if val_site else 1)
-validation_images = validation_images.append(all_image_info.sample(n= total_validation_images - len(validation_images), replace=False, weights='validation_weight')) 
+validation_images = validation_images.append(all_image_info.sample(n= total_validation_images - len(validation_images), replace=False, random_state=99, weights='validation_weight')) 
 
 # Training images are ones that are left
 train_images = all_image_info[~all_image_info.index.isin(validation_images.index)]
@@ -112,7 +112,7 @@ assert validation_images.index.nunique() == len(validation_images), 'duplicates 
 # Use the unique combinations across the 3 categories. 
 train_images['unique_category'] = train_images.dominant_cover.astype(str) + train_images.crop_type.astype(str) + train_images.crop_status.astype(str)
 train_images['sample_weight'] = compute_sample_weight('balanced', train_images.unique_category)
-train_images = train_images.sample(n=train_sample_size, replace=True, weights='sample_weight')
+train_images = train_images.sample(n=train_sample_size, replace=True, random_state=99, weights='sample_weight')
 
 #-------------------------
 # Generate numpy arrays of all images. Each image is repeated several times from the sampling
