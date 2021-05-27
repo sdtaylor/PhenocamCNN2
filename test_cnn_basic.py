@@ -16,18 +16,64 @@ from tools.image_tools import load_imgs_from_df
 from tools.keras_tools import MultiOutputDataGenerator
 
 from sklearn.model_selection import ParameterGrid
-# to change from param grid testing. train_sample_size, target_size, epochs
 
+#----------------
+# config stuff
+#----------------
 image_dir = 'data/phenocam_train_images/'
-train_sample_size = 20000
-random_image_crops = 5
-crop_size = 400
+extra_image_dir = 'data/extra_phenocam_train_images/'
+
+train_sample_size = 100000
 
 validation_fraction = 0.2
 target_size = (224,224)
 batch_size  = 50
 
 image_info = pd.read_csv('train_image_annotation/imageant_session2.csv')
+extra_image_info = pd.read_csv('data/extra_images_for_fitting.csv')
+
+def extract_phenocam_name(filename):
+    # filenames look like 'arsgacp1_2016_07_25_120000.jpg'
+    return filename.split('_')[0]
+
+def extract_date(filename):
+    filename_split = filename.split('_')
+    year  = filename_split[1]
+    month = filename_split[2]
+    day   = filename_split[3]
+    return '{}-{}-{}'.format(year,month,day)
+
+#----------------
+# Merge the primary image_info, which was annoated by hand, with the extra_image_info
+# which was not annotated but consists of the same sites and dates.
+#---------------
+
+image_info['date'] = image_info.file.map(extract_date)
+image_info['phenocam_name'] = image_info.file.map(extract_phenocam_name)
+
+image_info['filepath'] = image_dir + image_info.file
+extra_image_info['filepath'] = extra_image_dir + extra_image_info.filenames + '.jpg'
+
+image_info       = image_info[['filepath','phenocam_name','date','dominant_cover','crop_type','crop_status']]
+extra_image_info = extra_image_info[['filepath','phenocam_name','date']]
+
+
+# Assigned annotations to the extra images
+extra_image_info = extra_image_info.merge(image_info[['phenocam_name','date','dominant_cover','crop_type','crop_status']],
+                                          how = 'left',
+                                          on  = ['phenocam_name','date'])
+
+# Drop any extra images without matching annotations that snuck in
+extra_image_info = extra_image_info[~extra_image_info.dominant_cover.isna()]
+
+all_image_info = image_info.append(extra_image_info).reset_index()
+
+#-------------------------
+# drop the fallow crop type. There was just not that many of it in the end.
+# might be tricky just switching the numbers around though.
+#----------------
+
+#TODO
 
 # The different targest and their number of classes
 output_classes = {'dominant_cover' : 6,
@@ -35,23 +81,26 @@ output_classes = {'dominant_cover' : 6,
                   'crop_status'    : 7}
 #output_classes = {'dominant_cover' : 6}
 
+
+
 #-------------------------
 # Setup validation split
-total_validation_images = int(len(image_info) * validation_fraction)
+#----------------
+total_validation_images = int(len(all_image_info) * validation_fraction)
 
 # First put all images from held out sites into the validation set
-image_info['validation_site'] = image_info.file.apply(lambda f: bool(re.search(r'(arsmorris2)|(mandani2)|(cafboydnorthltar01)', f)))
-validation_images = image_info[image_info.validation_site]
+all_image_info['validation_site'] = all_image_info.phenocam_name.apply(lambda f: bool(re.search(r'(arsmorris2)|(mandani2)|(cafboydnorthltar01)', f)))
+validation_images = all_image_info[all_image_info.validation_site]
 
 # Add in a random sample of remaining images to get to the total validation fraction
 # images from validation sites excluded here by setting weight to 0
-image_info['validation_weight'] = image_info.validation_site.apply(lambda val_site: 0 if val_site else 1)
-validation_images = validation_images.append(image_info.sample(n= total_validation_images - len(validation_images), replace=False, weights='validation_weight')) 
+all_image_info['validation_weight'] = all_image_info.validation_site.apply(lambda val_site: 0 if val_site else 1)
+validation_images = validation_images.append(all_image_info.sample(n= total_validation_images - len(validation_images), replace=False, weights='validation_weight')) 
 
 # Training images are ones that are left
-train_images = image_info[~image_info.index.isin(validation_images.index)]
+train_images = all_image_info[~all_image_info.index.isin(validation_images.index)]
 
-# assure no validtion sites in the training data, and all images in each set are unique
+# assure no validation sites in the training data, and all images in each set are unique
 assert train_images.validation_site.sum() == 0, 'validation sites in training dataframe'
 assert train_images.index.nunique() == len(train_images), 'duplicates in training dataframe'
 assert validation_images.index.nunique() == len(validation_images), 'duplicates in validation dataframe'
@@ -67,7 +116,7 @@ train_images = train_images.sample(n=train_sample_size, replace=True, weights='s
 
 #-------------------------
 # Generate numpy arrays of all images. Each image is repeated several times from the sampling
-train_x = load_imgs_from_df(train_images, x_col='file', img_dir=image_dir, 
+train_x = load_imgs_from_df(train_images, x_col='filepath', img_dir='', 
                             target_size=target_size, data_format='channels_last')
 
 # Multiple output model means a dictionary for the targets
