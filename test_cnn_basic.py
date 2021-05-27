@@ -32,6 +32,13 @@ batch_size  = 50
 image_info = pd.read_csv('train_image_annotation/imageant_session2.csv')
 extra_image_info = pd.read_csv('data/extra_images_for_fitting.csv')
 
+# whoops, the filename exractor dropped the extension
+extra_image_info['filenames'] = extra_image_info.filenames + '.jpg'
+
+# drop extra images which are duplicates
+extra_image_info = extra_image_info[~extra_image_info.filenames.isin(image_info.file)]
+
+
 def extract_phenocam_name(filename):
     # filenames look like 'arsgacp1_2016_07_25_120000.jpg'
     return filename.split('_')[0]
@@ -52,7 +59,7 @@ image_info['date'] = image_info.file.map(extract_date)
 image_info['phenocam_name'] = image_info.file.map(extract_phenocam_name)
 
 image_info['filepath'] = image_dir + image_info.file
-extra_image_info['filepath'] = extra_image_dir + extra_image_info.filenames + '.jpg'
+extra_image_info['filepath'] = extra_image_dir + extra_image_info.filenames
 
 image_info       = image_info[['filepath','phenocam_name','date','dominant_cover','crop_type','crop_status']]
 extra_image_info = extra_image_info[['filepath','phenocam_name','date']]
