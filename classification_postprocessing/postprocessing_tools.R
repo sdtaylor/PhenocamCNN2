@@ -77,7 +77,7 @@ gap_fill_na_predictions = function(df, max_gap_size){
   df %>%
     mutate(was_na = is.na(probability)) %>%
     group_by(phenocam_name, category, class) %>%
-    mutate(probability = zoo::na.approx(probability, maxgap=max_gap_size)) %>%
+    mutate(probability = zoo::na.approx(probability, maxgap=max_gap_size, na.rm=F)) %>%
     ungroup()
 }
 
