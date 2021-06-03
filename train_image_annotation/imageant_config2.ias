@@ -1,0 +1,69 @@
+main_tasks:
+    - text: 'Dominant Cover'
+      variable: dominant_cover
+      responses:
+        - text   : 'Unknown (blurry, water/snow covering lense)'
+          action : keypress{0 ~ 0}
+          
+        - text   : 'Live or senesced Vegetation'
+          action : keypress{1 ~ 1}
+          
+        - text   : 'Post-harvest Residue'
+          action : keypress{2 ~ 2}
+          
+        - text   : 'Bare Soil'
+          action : keypress{3 ~ 3}
+
+        - text   : 'Snow'
+          action : keypress{4 ~ 4}
+          
+        - text   : 'Water'
+          action : keypress{5 ~ 5}
+    
+    - text: 'Crop/Vegetation type'
+      variable: crop_type
+      responses:
+        - text   : 'unknown (blurry, water/snow covering lense)'
+          action : keypress{0 ~ 0}
+          
+        - text   : 'unknown plant (Green plants are present but cannot be confidently identified)'
+          action : keypress{1 ~ 1}
+          
+        - text   : 'large leaf grass (corn/switchgrass)'
+          action : keypress{2 ~ 2}
+          
+        - text   : 'small leaf grass (wheat/barley/rice)'
+          action : keypress{3 ~ 3}
+
+        - text   : 'other (soybean/alfalfa/cover crop)'
+          action : keypress{4 ~ 4}
+
+        - text   : 'fallow/volunteers (any non-planted crop)'
+          action : keypress{5 ~ 5}
+
+        - text   : 'none (>95% cover residue, soil, snow, and/or water)'
+          action : keypress{6 ~ 6}
+
+    - text: 'Crop status (or primary vegetation status if no crop present)'
+      variable: crop_status
+      responses:
+        - text   : 'unknown (blurry, water/snow covering lense)'
+          action : keypress{0 ~ 0}
+          
+        - text   : 'emergence'
+          action : keypress{1 ~ 1}
+          
+        - text   : 'Growth stage'
+          action : keypress{2 ~ 2}
+          
+        - text   : 'tassles/flowering'
+          action : keypress{3 ~ 3}
+          
+        - text   : 'senescing/browning (10% or more of visable plants are brown/browning)'
+          action : keypress{4 ~ 4}
+          
+        - text   : 'fully senesced (90% or more of visable plants are brown/browning)'
+          action : keypress{5 ~ 5}
+        
+        - text   : 'No crop or green veg present (harvested, plowed, snow/water covered)'
+          action : keypress{6 ~ 6}
