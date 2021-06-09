@@ -6,27 +6,32 @@ This takes the output from a keras image classificaiton model and prepares it fo
 in a hidden markov model (HMM). 
 "
 
-MAX_NA_FILL_SIZE = 3
+MAX_SNOW_DAY_FILL_SIZE = 30
+MAX_MISSING_OR_BLURRY_FILL_SIZE = 3
 MIN_SEQUENCE_SIZE = 60
 
-image_predictions = read_csv('./data/vgg16_v1_60epochs_predictions.csv') %>%
+image_predictions = read_csv('./data/vgg16_v3_25epochs_predictions.csv') %>%
   prep_prediction_dataframe() %>% 
   group_by(phenocam_name, date) %>%  # for any phenocam_name,date where there is > 1 image just pick the 1st one.
   slice_head(n=1) %>%
   ungroup() %>%
   prediction_df_wide_to_long() %>%
+  process_snow_days() %>% 
+  gap_fill_na_predictions(max_gap_size = MAX_SNOW_DAY_FILL_SIZE) %>% 
   fill_blurry_dates_with_na() %>%
   remove_blurry_class_and_normalize() %>%
-  gap_fill_na_predictions(max_gap_size = MAX_NA_FILL_SIZE) %>%
-  prediction_df_long_to_wide() 
+  prediction_df_long_to_wide()  %>%
+  fill_date_gaps_with_na %>%
+  prediction_df_wide_to_long() %>%
+  gap_fill_na_predictions(max_gap_size = MAX_MISSING_OR_BLURRY_FILL_SIZE) 
   
   
 image_predictions = image_predictions %>%
   assign_sequence_identifiers() %>%
-  group_by(phenocam_name, site_sequence_id) %>%
-  filter(n() > MIN_SEQUENCE_SIZE) %>%
-  ungroup() %>%
-  prediction_df_wide_to_long()
+  filter(!is.na(site_sequence_id)) %>%
+  group_by(phenocam_name, category, site_sequence_id) %>%
+  filter(n_distinct(date) > MIN_SEQUENCE_SIZE) %>%
+  ungroup()
 
 image_predictions %>%
   filter(category=='dominant_cover') %>%
@@ -40,5 +45,5 @@ image_predictions %>%
 
 image_predictions %>%
   filter(category=='crop_status') %>%
-  pivot_wider(names_from = 'class', values_from='probability') %>%
+  pivot_wider(names_from = 'class', values_from='probability') %>% 
   write_csv('data/image_predictions_for_hmm-crop_status.csv')

@@ -20,10 +20,14 @@ prep_prediction_dataframe = function(df){
 .fill_date_gaps_with_na_single_site = function(df){
   # where there are non-continuous timeseries, insert missing dates with NA's for all probabilites
   full_date_range = tibble(date = seq(min(df$date), max(df$date), 'day'))
+  camera_name = unique(df$phenocam_name)
+  if(length(camera_name)>1) stop('More than one phenocam_name in .fill_date_gaps_with_na_single_site')
   
   df %>%
     full_join(full_date_range, by='date') %>%
-    arrange(date)
+    arrange(date) %>%
+    mutate(year = lubridate::year(date),
+           phenocam_name = camera_name)
 }
 
 # For every site ensure there is a continuous timeseries from beginning to end.
@@ -36,7 +40,29 @@ fill_date_gaps_with_na = function(df){
     ungroup()
 }
 
-
+# Most of the time when snow is covering the field it's covering residue or soil, thus the crop_type and crop_status are
+# appropriately labeled as "no_crop". But sometimes snow covers actual plants (like winter wheat), which is still marked
+# as "no_crop" in crop_type and crop_status, and forces those categories to transition from emergence->growth to accommodate.
+# So, for dates where dominant_cover=snow is the highest probability, mark crop_type and crop_status as NA to be gap-filled
+# with surrounding probabilities. When there is actually no crop then they'll be filled with no_crop, when there is a plant
+# present they'll be gap-filled with the actual state. 
+process_snow_days = function(df){
+  if(!prediction_df_is_long(df)) stop('prediction data.frame must be long format for snow day processing')
+  snowy_dates = df %>%
+    filter(category == 'dominant_cover') %>%
+    group_by(phenocam_name, date) %>%
+    slice_max(probability) %>%
+    ungroup() %>%
+    filter(class=='snow') %>%
+    mutate(is_snowy = TRUE) %>%
+    select(phenocam_name, date, is_snowy)
+  
+  df %>%
+    left_join(snowy_dates, by=c('phenocam_name','date')) %>%
+    mutate(is_snowy = replace_na(is_snowy, FALSE)) %>%
+    mutate(probability = ifelse((is_snowy) & (category %in% c('crop_type','crop_status')), NA, probability)) %>%
+    select(-is_snowy)
+}
 
 # The classifier does not attempt to classify blurry photos. Here those dates
 # are filled with NA instead.
@@ -78,7 +104,8 @@ gap_fill_na_predictions = function(df, max_gap_size){
     mutate(was_na = is.na(probability)) %>%
     group_by(phenocam_name, category, class) %>%
     mutate(probability = zoo::na.approx(probability, maxgap=max_gap_size, na.rm=F)) %>%
-    ungroup()
+    ungroup() %>%
+    select(-was_na) # This is for debugging this function, but messes up the data.frame during the later transformations
 }
 
 # Helper function for below.
@@ -86,13 +113,23 @@ gap_fill_na_predictions = function(df, max_gap_size){
   full_date_range = seq(min(df$date), max(df$date), 'day')
   if(!all(unique(df$date) %in% full_date_range)) stop('Not all dates in df for site: ',unique(df$phenocam_name))
   
-  df$running_tally = NA
-  df$site_sequence_id = NA
+  all_dates = df %>%
+    group_by(date) %>%
+    summarise(missing_percent_for_date = mean(is.na(probability))) %>%
+    ungroup()
+  
+  # sanity check, each date should have all probabilities present (0) or none (1)
+  if(!all((all_dates$missing_percent_for_date==0) | (all_dates$missing_percent_for_date==1))){
+    stop('in assigning sequence IDs, probability mismatch for ',unique(df$phenocam_name),' - ',unique(df$category))
+  }
+  
+  all_dates$running_tally = NA
+  all_dates$site_sequence_id = NA
   present_tally=0
   seq_id=0
-  for(i in 1:nrow(df)){
     
-    current_row_present = !is.na(df$`dominant_cover-vegetation`[i])
+  for(i in 1:nrow(all_dates)){
+    current_row_present = all_dates$missing_percent_for_date[i] == 0
     if(current_row_present){
       present_tally = present_tally + 1
       missing_tally = 0
@@ -102,24 +139,27 @@ gap_fill_na_predictions = function(df, max_gap_size){
     
     if(present_tally==1){
       seq_id = seq_id+1
-      df$site_sequence_id[i] = seq_id
+      all_dates$site_sequence_id[i] = seq_id
     } else if(present_tally>1){
-      df$site_sequence_id[i] = seq_id
+      all_dates$site_sequence_id[i] = seq_id
     }
     
-    df$running_tally[i] = present_tally
+    all_dates$running_tally[i] = present_tally
   }
   
-  df %>%
-    select(-running_tally)
-}
-
-# For each location assign identifiers to contiguous chunks (ie. non NA) timeseries
-assign_sequence_identifiers = function(df){
-  if(!prediction_df_is_wide(df)) stop('prediction data.frame must be wide format for sequence identification')
+  all_dates = all_dates %>%
+    select(date, site_sequence_id)
   
   df %>%
-    group_by(phenocam_name) %>%
+    left_join(all_dates, by='date')
+}
+
+# For each location and category assign identifiers to contiguous chunks (ie. non NA) timeseries
+assign_sequence_identifiers = function(df){
+  if(!prediction_df_is_long(df)) stop('prediction data.frame must be long format for sequence identification')
+  
+  df %>%
+    group_by(phenocam_name, category) %>%
     do(.assign_sequence_identifier_single_site(.)) %>%
     ungroup()
   
