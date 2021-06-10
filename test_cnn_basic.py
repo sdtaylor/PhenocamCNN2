@@ -1,4 +1,5 @@
 from glob import glob
+from os.path import basename
 import re
 from math import ceil
 
@@ -28,8 +29,9 @@ train_sample_size = 100000
 validation_fraction = 0.2
 target_size = (224,224)
 batch_size  = 50
+unique_category_min_n = 40 # each combo of dominant-cover/crop_type/crop_status must have at least this many original images
 
-image_info = pd.read_csv('train_image_annotation/imageant_session2.csv')
+image_info = pd.read_csv('train_image_annotation/image_annotations.csv')
 extra_image_info = pd.read_csv('data/extra_images_for_fitting.csv')
 
 # whoops, the filename exractor dropped the extension
@@ -37,6 +39,22 @@ extra_image_info['filenames'] = extra_image_info.filenames + '.jpg'
 
 # drop extra images which are duplicates
 extra_image_info = extra_image_info[~extra_image_info.filenames.isin(image_info.file)]
+
+# drop any missing extra image. Over 100k so a few had failed downloads
+available_extra_images = glob(extra_image_dir+'*jpg')
+available_extra_images = [basename(i) for i in available_extra_images]
+extra_image_info = extra_image_info[extra_image_info.filenames.isin(available_extra_images)]
+
+# some category combinations are not well represented (eg. snow + unknown_plant + senescing)
+# so just don't bother with them
+image_info['unique_category'] = image_info.dominant_cover.astype(str) + image_info.crop_type.astype(str) + image_info.crop_status.astype(str)
+to_keep = image_info.unique_category.value_counts().reset_index().rename(columns={'index':'unique_category','unique_category':'n'})
+to_keep['keep'] = to_keep.n >= unique_category_min_n
+
+image_info = image_info.merge(to_keep, on='unique_category', how='left')
+image_info = image_info[image_info.keep].drop(columns=['unique_category','n','keep'])
+
+print('working with {} extra images, {} annoated images'.format(extra_image_info.shape[0], image_info.shape[0]))
 
 
 def extract_phenocam_name(filename):
@@ -84,7 +102,7 @@ all_image_info = image_info.append(extra_image_info).reset_index()
 
 # The different targest and their number of classes
 output_classes = {'dominant_cover' : 6,
-                  'crop_type'      : 7,
+                  'crop_type'      : 8,
                   'crop_status'    : 7}
 #output_classes = {'dominant_cover' : 6}
 
@@ -149,7 +167,7 @@ train_generator = MultiOutputDataGenerator(preprocessing_function=None, # scalin
 
 # small sample for testing                                         
 #validation_images = validation_images.sample(500)                      
-val_x =  load_imgs_from_df(validation_images, x_col='file', img_dir=image_dir, 
+val_x =  load_imgs_from_df(validation_images, x_col='filepath', img_dir='', 
                             target_size=target_size, data_format='channels_last')
 val_y = {c:to_categorical(validation_images[c]) for c in output_classes.keys()}
 
@@ -189,21 +207,35 @@ optimizer_param_grid = ParameterGrid({'lr':[0.01,0.001,0.0001],'epsilon':[1.0,0.
 #for i, optimzer_params in enumerate(optimizer_param_grid):
 optimzer_params = dict(lr=0.01, epsilon=0.1)
 
-full_model.load_weights(init_weights_file)
+#full_model.load_weights(init_weights_file)
+#print(full_model.summary())
+
+# First round of fitting, 20 epochs
 full_model.compile(optimizer = keras.optimizers.Adam(lr=optimzer_params['lr'], epsilon=optimzer_params['epsilon']),
               loss='categorical_crossentropy',metrics=[keras.metrics.CategoricalAccuracy()])
-print(full_model.summary())
 
 full_model.fit(train_generator,
                validation_data= (val_x,val_y),
                #class_weight = weights,
                steps_per_epoch=ceil(train_sample_size/batch_size), # this is not automatic cause of custom generator
-               epochs=50,
+               epochs=20,
                use_multiprocessing=False)
 
-trace_history = pd.DataFrame(full_model.history.history)
-trace_history['lr'] = optimzer_params['lr']
-trace_history['epsilon'] = optimzer_params['epsilon']
 
-trace_history.to_csv('data/vgg16_v1_50epochs_trace.csv', index=False)
-full_model.save_weights('data/vgg16_v1_50epochs.h5')
+trace_history1 = pd.DataFrame(full_model.history.history)
+
+# 2nd round of fitting, 5 epochs with lower learning rate
+optimzer_params = dict(lr=0.001, epsilon=0.1)
+full_model.compile(optimizer = keras.optimizers.Adam(lr=optimzer_params['lr'], epsilon=optimzer_params['epsilon']),
+              loss='categorical_crossentropy',metrics=[keras.metrics.CategoricalAccuracy()])
+
+full_model.fit(train_generator,
+               validation_data= (val_x,val_y),
+               #class_weight = weights,
+               steps_per_epoch=ceil(train_sample_size/batch_size), # this is not automatic cause of custom generator
+               epochs=5,
+               use_multiprocessing=False)
+
+trace_history2 = pd.DataFrame(full_model.history.history)
+trace_history1.append(trace_history2).to_csv('data/vgg16_v4_25epochs_trace.csv', index=False)
+full_model.save('data/vgg16_v4_25epochs.h5')
