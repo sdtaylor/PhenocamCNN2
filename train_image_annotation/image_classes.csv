@@ -7,11 +7,12 @@ dominant_cover,snow,4
 dominant_cover,water,5
 crop_type,blurry,0
 crop_type,unknown_plant,1
-crop_type,large_grass,2
-crop_type,small_grass,3
-crop_type,other,4
-crop_type,fallow,5
-crop_type,no_crop,6
+crop_type,corn,2
+crop_type,wheat/barley,3
+crop_type,soybean,4
+crop_type,alfalfa,5
+crop_type,other,6
+crop_type,no_crop,7
 crop_status,blurry,0
 crop_status,emergence,1
 crop_status,growth,2
