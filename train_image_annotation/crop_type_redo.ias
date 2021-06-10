@@ -1,0 +1,27 @@
+main_tasks:
+    - text: 'Crop/Vegetation type'
+      variable: crop_type
+      responses:
+        - text   : 'unknown (blurry, water/snow covering lense)'
+          action : keypress{0 ~ 0}
+          
+        - text   : 'unknown plant (Green plants are present but cannot be confidently identified)'
+          action : keypress{1 ~ 1}
+          
+        - text   : 'Corn'
+          action : keypress{2 ~ 2}
+          
+        - text   : 'Wheat/Barley'
+          action : keypress{3 ~ 3}
+
+        - text   : 'Soybean'
+          action : keypress{4 ~ 4}
+
+        - text   : 'Alfalfa'
+          action : keypress{5 ~ 5}
+
+        - text   : 'any other crop or fallow'
+          action : keypress{6 ~ 6}
+
+        - text   : 'none (>95% cover residue, soil, snow, and/or water)'
+          action : keypress{7 ~ 7}
