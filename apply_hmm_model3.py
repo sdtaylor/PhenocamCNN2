@@ -50,15 +50,14 @@ for category, category_attrs in category_info.items():
             try:
                 hmm_predictions_index = model.predict(list(range(n_samples)), algorithm='viterbi')
             except:
-                print('HMM model failed for {} sequence_id: {}'.format(p,sequence))
+                print('HMM model failed for {} sequence_id: {}, category: {}'.format(p,sequence, category))
                 continue
             
             hmm_predictions = [model.states[i].name for i in hmm_predictions_index]
             
             # setup a dataframe to store hmm results
-            hmm_output = sequence_subset[['phenocam_name','year','date','category']].copy()           
+            hmm_output = sequence_subset[['phenocam_name','year','date','site_sequence_id','category']].copy()           
             hmm_output['hmm_class'] =  hmm_predictions[1:] # drop the starting state
             
             all_hmm_output.append(hmm_output)
 
-pd.concat(all_hmm_output).to_csv('./data/hmm_output-dominant_cover.csv', index=False)
