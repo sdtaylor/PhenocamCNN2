@@ -21,6 +21,9 @@ extra_images_hours_to_keep = c(9, 10, 11, 12, 13, 14, 15)
 extra_image_list = 'data/extra_images_for_fitting.csv'
 extra_training_image_folder = 'data/extra_phenocam_train_images/'
 
+# This is the *last* output
+final_prediction_file = './data/final_predictions.csv'
+
 # ag sites which are actually pastures
 .pasture_cameras  = c("uiefprairie2", 
                       "archboldavir", 
