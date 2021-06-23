@@ -15,6 +15,8 @@ random_images_per_period = 50
 
 training_images_download_list = 'data/images_for_annotation.csv'
 
+train_image_annotation_file = './train_image_annotation/image_annotations.csv'
+
 extra_images_hours_to_keep = c(9, 10, 11, 12, 13, 14, 15)
 extra_image_list = 'data/extra_images_for_fitting.csv'
 extra_training_image_folder = 'data/extra_phenocam_train_images/'
