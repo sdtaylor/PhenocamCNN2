@@ -218,7 +218,7 @@ full_model.fit(train_generator,
                validation_data= (val_x,val_y),
                #class_weight = weights,
                steps_per_epoch=ceil(train_sample_size/batch_size), # this is not automatic cause of custom generator
-               epochs=20,
+               epochs=15,
                use_multiprocessing=False)
 
 
@@ -237,5 +237,5 @@ full_model.fit(train_generator,
                use_multiprocessing=False)
 
 trace_history2 = pd.DataFrame(full_model.history.history)
-trace_history1.append(trace_history2).to_csv('data/vgg16_v4_25epochs_trace.csv', index=False)
-full_model.save('data/vgg16_v4_25epochs.h5')
+trace_history1.append(trace_history2).to_csv('data/vgg16_v4_20epochs_trace.csv', index=False)
+full_model.save('data/vgg16_v4_20epochs.h5')
