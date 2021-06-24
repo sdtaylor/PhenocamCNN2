@@ -130,6 +130,13 @@ assert train_images.validation_site.sum() == 0, 'validation sites in training da
 assert train_images.index.nunique() == len(train_images), 'duplicates in training dataframe'
 assert validation_images.index.nunique() == len(validation_images), 'duplicates in validation dataframe'
 
+# save the val/train split info for later evaluation
+validation_images['is_validation'] = True
+train_images['is_validation'] = False
+val_train_split_info = validation_images.append(train_images)
+val_train_split_info['filename'] = val_train_split_info.filepath.map(basename)
+val_train_split_info[['filename','is_validation']].to_csv('./data/val_train_split_info.csv', index=False)
+
 #-------------------------
 # expand training by random sampling, weighted so that low sample size category images are repeated.
 # This makes it so sample sizes are even in training
