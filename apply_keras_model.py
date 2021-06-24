@@ -8,12 +8,12 @@ from tools import keras_tools
 
 # The different targest and their number of classes
 output_classes = {'dominant_cover' : 6,
-                  'crop_type'      : 7,
+                  'crop_type'      : 8,
                   'crop_status'    : 7}
 
-results_file = './data/vgg16_v1_55epochs_predictions.csv'
+results_file = './data/vgg16_v4_20epochs_predictions.csv'
 
-keras_model = keras.models.load_model('./data/vgg16_v1_55epochs.h5')
+keras_model = keras.models.load_model('./data/vgg16_v4_20epochs.h5')
 
 class_categories = pd.read_csv('train_image_annotation/image_classes.csv')
 
