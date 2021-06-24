@@ -17,10 +17,14 @@ keras_model = keras.models.load_model('./data/vgg16_v1_55epochs.h5')
 
 class_categories = pd.read_csv('train_image_annotation/image_classes.csv')
 
-image_dir = '/project/ltar_phenology_proj1/PhenocamCNN2/data/PhenocamCNN_images/'
-#image_dir = './data/phenocam_train_images/'
+# fit to all images in phenocam data dump from ORNL as well as all training images
+# there are some duplicates which will be dealt with later.
+image_dirs = ['/project/ltar_phenology_proj1/PhenocamCNN2/data/PhenocamCNN_images/',
+              './data/phenocam_train_images/']
 
-all_images = glob.glob(image_dir+ '**/*.jpg', recursive=True)
+all_images = []
+for image_dir in image_dirs:
+    all_images.extend(glob.glob(image_dir+ '**/*.jpg', recursive=True))
 
 image_info = pd.DataFrame(dict(filepath = all_images))
 
