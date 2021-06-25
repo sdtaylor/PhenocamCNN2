@@ -70,10 +70,11 @@ for(i in 1:nrow(training_images)){
 }
 
 
-# this parse function will return a nice data.frame of all everthing
+# this parse function will return a nice data.frame of all everything. 
 x = phenocamapi::parse_phenocam_filenames(all_daily_images) %>%
+  mutate(filename = paste0(filenames,'.jpg')) %>% 
   select(url = filepaths,
-         filenames, 
+         filename, 
          phenocam_name = Site,
          year = Year, 
          month = Month,

@@ -34,16 +34,13 @@ unique_category_min_n = 40 # each combo of dominant-cover/crop_type/crop_status 
 image_info = pd.read_csv('train_image_annotation/image_annotations.csv')
 extra_image_info = pd.read_csv('data/extra_images_for_fitting.csv')
 
-# whoops, the filename exractor dropped the extension
-extra_image_info['filenames'] = extra_image_info.filenames + '.jpg'
-
 # drop extra images which are duplicates
-extra_image_info = extra_image_info[~extra_image_info.filenames.isin(image_info.file)]
+extra_image_info = extra_image_info[~extra_image_info.filename.isin(image_info.file)]
 
 # drop any missing extra image. Over 100k so a few had failed downloads
 available_extra_images = glob(extra_image_dir+'*jpg')
 available_extra_images = [basename(i) for i in available_extra_images]
-extra_image_info = extra_image_info[extra_image_info.filenames.isin(available_extra_images)]
+extra_image_info = extra_image_info[extra_image_info.filename.isin(available_extra_images)]
 
 # some category combinations are not well represented (eg. snow + unknown_plant + senescing)
 # so just don't bother with them
@@ -77,7 +74,7 @@ image_info['date'] = image_info.file.map(extract_date)
 image_info['phenocam_name'] = image_info.file.map(extract_phenocam_name)
 
 image_info['filepath'] = image_dir + image_info.file
-extra_image_info['filepath'] = extra_image_dir + extra_image_info.filenames
+extra_image_info['filepath'] = extra_image_dir + extra_image_info.filename
 
 image_info       = image_info[['filepath','phenocam_name','date','dominant_cover','crop_type','crop_status']]
 extra_image_info = extra_image_info[['filepath','phenocam_name','date']]
