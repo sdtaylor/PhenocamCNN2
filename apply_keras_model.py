@@ -20,6 +20,7 @@ class_categories = pd.read_csv('train_image_annotation/image_classes.csv')
 # fit to all images in phenocam data dump from ORNL as well as all training images
 # there are some duplicates which will be dealt with later.
 image_dirs = ['/project/ltar_phenology_proj1/PhenocamCNN2/data/PhenocamCNN_images/',
+              './data/extra_phenocam_train_images/',
               './data/phenocam_train_images/']
 
 all_images = []
