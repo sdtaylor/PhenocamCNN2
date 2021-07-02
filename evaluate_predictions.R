@@ -81,62 +81,115 @@ get_stats = function(d, stats = c('f1','balanced_accuracy')){
 all_data = all_training_data %>%
   left_join(select(max_probability,filename,category,maxprob_class), by=c('filename','category'))
 sample_sizes = all_data %>%
-  count(category, true_class) %>%
+  count(category, true_class, data_type) %>%
   rename(class = true_class, sample_size=n)
+# 
+# overal_stats = all_data %>%
+#   rename(predicted_class = maxprob_class) %>%
+#   get_stats(stats=c('sensitivity','specificity','f1')) %>%
+#   left_join(sample_sizes)
 
 prediction_stats = all_data %>%
   rename(predicted_class = maxprob_class) %>%
   group_by(category, data_type) %>%
   nest() %>%
-  mutate(stats = map(data, ~get_stats(., stats=c('sensitivity','specificity','f1')))) %>%
+  mutate(stats = map(data, ~get_stats(., stats=c('precision','recall','f1')))) %>%
   select(-data) %>%
   unnest(stats) %>%
-  left_join(sample_sizes, by=c('category','class'))
+  left_join(sample_sizes, by=c('category','class','data_type'))
 
 
-table_row_order = tribble(
-  ~category, ~class, ~rank,
-  'dominant_cover', 'blurry', 1,
-  'dominant_cover', 'vegetation', 2,
-  'dominant_cover', 'residue', 3,
-  'dominant_cover', 'soil', 4,
-  'dominant_cover', 'snow', 5,
-  'dominant_cover', 'water', 6,
+
+# table_row_order = tribble(
+#   ~category, ~class, ~rank,
+#   'dominant_cover', 'blurry', 1,
+#   'dominant_cover', 'vegetation', 2,
+#   'dominant_cover', 'residue', 3,
+#   'dominant_cover', 'soil', 4,
+#   'dominant_cover', 'snow', 5,
+#   'dominant_cover', 'water', 6,
+#   
+#   'crop_type', 'blurry', 7,
+#   'crop_type', 'unknown_plant', 8,
+#   'crop_type', 'corn', 9,
+#   'crop_type', 'wheat/barley', 10,
+#   'crop_type', 'soybean', 11,
+#   'crop_type', 'alfalfa', 12,
+#   'crop_type', 'other', 13,
+#   'crop_type', 'no_crop', 14,
+#   
+#   'crop_status', 'blurry', 15,
+#   'crop_status', 'emergence', 16,
+#   'crop_status', 'growth', 17,
+#   'crop_status', 'flowers', 18,
+#   'crop_status', 'senescing', 19,
+#   'crop_status', 'senesced', 20,
+#   'crop_status', 'no_crop', 21,
+# )
+
+# # Table formatting stuff happens here
+# prediction_stats %>%
+#   rename(metric = term, metric_value = estimate) %>%
+#   mutate(metric_value = case_when(
+#     metric=='sample_size' ~ as.character(metric_value),                     # for sample size keep the same
+#     TRUE ~ trimws(format(round(metric_value,2),drop0trailing=F)))) %>% # for decimals keep 2 sig. digis.
+#   pivot_wider(names_from = c('metric','data_type'), values_from='metric_value') %>% View()
+#   select(category, class, sample_size, starts_with('sensitivity'), starts_with('specificity'), starts_with('f1'))%>%   # column order of table
+#   #mutate(error_text = paste0(val,', ',train)) %>%
+#   #select(-train, -val) %>%
+#   #pivot_wider(names_from = 'metric', values_from = 'error_text') %>%
+#   left_join(table_row_order, by=c('category','class')) %>%
+#   arrange(rank) %>%
+#   select(-rank) %>%
+#   kable(format = 'latex', col.names = c('Category','Class','Sample Size','Training','Validation','Training','Validation','Training','Validation')) %>%
+#   add_header_above(c(' '=3, 'Sensitivity' = 2, 'Specificity' = 2, 'F1 Score' = 2))
+
+# summary stats for each category
+overal_stats = prediction_stats %>%
+  group_by(category, term, data_type) %>%
+  summarise(estimate = sum(estimate*sample_size)/sum(sample_size),
+            sample_size=sum(sample_size)) %>%
+  mutate(class = 'overall')
+
+# order things correctly for the figure. These are in reverse since ggplot starts
+# from the bottom
+class_order = c('blurry','no_crop','water','snow','residue','soil','vegetation',
+                'unknown_plant','other','alfalfa','soybean','wheat/barley','corn',
+                'senesced','senescing','flowers','growth','emergence',
+                'overall')
+class_labels = str_to_title(str_replace(class_order,'_',' '))
   
-  'crop_type', 'blurry', 7,
-  'crop_type', 'unknown_plant', 8,
-  'crop_type', 'corn', 9,
-  'crop_type', 'wheat/barley', 10,
-  'crop_type', 'soybean', 11,
-  'crop_type', 'alfalfa', 12,
-  'crop_type', 'other', 13,
-  'crop_type', 'no_crop', 14,
-  
-  'crop_status', 'blurry', 15,
-  'crop_status', 'emergence', 16,
-  'crop_status', 'growth', 17,
-  'crop_status', 'flowers', 18,
-  'crop_status', 'senescing', 19,
-  'crop_status', 'senesced', 20,
-  'crop_status', 'no_crop', 21,
-)
+# TODO: maybe put the crop_status in the correct biological order, 
+prediction_stats = prediction_stats %>%
+    bind_rows(overal_stats) %>%
+    mutate(class = factor(class, levels = class_order, labels=class_labels, ordered = T)) %>%
+    mutate(facet_label = paste0(str_to_title(term),': ',str_to_title(str_replace(category,'_',' ')))) 
 
-# Table formatting stuff happens here
+error_labels = prediction_stats %>%
+    mutate(estimate = trimws(format(round(estimate,2),drop0trailing=F))) %>%
+    pivot_wider(names_from='data_type', values_from=c('estimate','sample_size')) %>%
+    mutate(error_text = paste0(estimate_val,', ',estimate_train,' (',sample_size_val+sample_size_train,')'))
+    
 prediction_stats %>%
-  rename(metric = term, metric_value = estimate) %>%
-  mutate(metric_value = case_when(
-    metric=='sample_size' ~ as.character(metric_value),                     # for sample size keep the same
-    TRUE ~ trimws(format(round(metric_value,2),drop0trailing=F)))) %>% # for decimals keep 2 sig. digis.
-  pivot_wider(names_from = c('metric','data_type'), values_from='metric_value') %>%
-  select(category, class, sample_size, starts_with('sensitivity'), starts_with('specificity'), starts_with('f1'))%>%   # column order of table
-  #mutate(error_text = paste0(val,', ',train)) %>%
-  #select(-train, -val) %>%
-  #pivot_wider(names_from = 'metric', values_from = 'error_text') %>%
-  left_join(table_row_order, by=c('category','class')) %>%
-  arrange(rank) %>%
-  select(-rank) %>%
-  kable(format = 'latex', col.names = c('Category','Class','Sample Size','Training','Validation','Training','Validation','Training','Validation')) %>%
-  add_header_above(c(' '=3, 'Sensitivity' = 2, 'Specificity' = 2, 'F1 Score' = 2))
+    select(-sample_size) %>%
+    pivot_wider(names_from='data_type', values_from='estimate') %>%
+ggplot(aes(y=class)) + 
+    geom_segment(aes(x=0,xend=train,yend=class), color='grey60', size=8) + 
+    geom_segment(aes(x=0,xend=val,yend=class), size=3) + 
+    geom_text(data=error_labels, aes(x=1.025, label=error_text), size=4, hjust=0) + 
+    scale_x_continuous(breaks=c(0.3,0.5,0.7,0.9), labels=c('0.3','0.5','0.7','0.9')) + 
+    coord_cartesian(xlim=c(0.25,1.8)) + 
+    facet_wrap(~fct_rev(facet_label), ncol=3, scales='free_y') +
+    theme_bw() +
+    theme(axis.title.y = element_blank(),
+          axis.title.x = element_text(size=14),
+          axis.text  = element_text(color='black', size=12),
+          panel.grid.major.y = element_blank(),
+          panel.grid.major.x = element_line(color='grey80'),
+          panel.grid.minor   = element_blank(),
+          strip.background = element_blank(),
+          strip.text = element_text(size=14, hjust=0)) +
+    labs(x='Accuracy Metric Value')
 
 
 
