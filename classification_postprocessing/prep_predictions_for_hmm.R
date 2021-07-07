@@ -10,11 +10,10 @@ MAX_SNOW_DAY_FILL_SIZE = 60
 MAX_MISSING_OR_BLURRY_FILL_SIZE = 3
 MIN_SEQUENCE_SIZE = 60
 
-# dropping training images from here. predictions on them are for evaluation statistics, not final timeseries outputs.
-# I'll potentially change this to incorporate multiple daily images in the final output. see https://github.com/sdtaylor/PhenocamCNN/issues/10
-
 image_predictions = read_csv('./data/vgg16_v4_20epochs_predictions.csv') %>%
-  filter(!(str_detect(filepath, 'phenocam_train_images') | str_detect(filepath, 'extra_phenocam_train_images'))) %>%
+  filter(!str_detect(filepath, 'extra_phenocam_train_images')) %>%  # dropping the extra images from here as they were for training only, not evaluation or final timeseries.
+  mutate(filepath='') %>%                     # some training images are duplicated in the big folders of images, so null the filepath and use distinct to drop duplicates
+  distinct() %>%
   prep_prediction_dataframe() %>% 
   group_by(phenocam_name, date) %>%  # for any phenocam_name,date where there is > 1 image just pick the 1st one.
   slice_head(n=1) %>%
