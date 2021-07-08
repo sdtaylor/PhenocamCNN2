@@ -9,6 +9,10 @@ phenocam_training_image_folder = 'data/phenocam_train_images/'
 
 # 
 
+# This is every mid-day image available for all the sites.
+full_image_download_list = 'data/full_image_list.csv'
+full_image_folder        = 'data/phenocam_all_images/'
+
 # the number of images sampled per site/year/period
 # for initial training data gathering
 random_images_per_period = 50

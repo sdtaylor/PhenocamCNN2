@@ -94,10 +94,16 @@ for(full_file_path in all_gcc_files){
 
 
 # for each site, pick at most X random images from each period type
-#
+# this is for the training data.
 images_for_download = all_site_periods %>%
   filter(!is.na(image_filename)) %>%
   group_by(phenocam_name, period) %>%
   sample_n(min(n(),random_images_per_period))
 
 write_csv(images_for_download, training_images_download_list)
+
+# save the *full* image list to create the final timeseries products
+all_site_periods %>%
+  filter(!is.na(image_filename)) %>%
+  write_csv(full_image_download_list)
+
