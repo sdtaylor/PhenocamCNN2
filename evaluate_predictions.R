@@ -1,6 +1,6 @@
 library(tidyverse)
 library(zoo)
-library(kableExtra)
+#library(kableExtra)
 
 source('classification_postprocessing/postprocessing_tools.R')
 source('config.R')
@@ -44,23 +44,43 @@ original_training_data = read_csv(train_image_annotation_file) %>%
   select(-time) %>% # leftover from annotation
   prep_prediction_dataframe() 
 
+# original_training_data %>%
+#   pivot_longer(c('crop_status','dominant_cover','crop_type'), names_to='category', values_to='class_value') %>%
+#   left_join(class_descriptions, by=c('category','class_value')) %>%
+#   select(phenocam_name, date, category, class = class_description) %>%
+#   pivot_wider(names_from='category', values_from='class') %>%
+#   count(dominant_cover, crop_type, crop_status) %>%
+#   View()
+
+
+
 # Load the extra images and annotate using the hand annotated data
-extra_image_training_data = read_csv('data/extra_images_for_fitting.csv') %>%
-  select(phenocam_name, date, filename) %>%
-  left_join(select(original_training_data,-filename), by=c('phenocam_name','date')) %>%
-  filter(complete.cases(.)) # some extra images which don't have a date in the original_training_data may have snuck in
+# extra_image_training_data = read_csv('data/extra_images_for_fitting.csv') %>%
+#   select(phenocam_name, date, filename) %>%
+#   left_join(select(original_training_data,-filename), by=c('phenocam_name','date')) %>%
+#   filter(complete.cases(.)) # some extra images which don't have a date in the original_training_data may have snuck in
 
 all_training_data = original_training_data %>%
-  bind_rows(extra_image_training_data) %>% 
+  #bind_rows(extra_image_training_data) %>% 
   inner_join(val_train_split_info, by='filename') %>%
   distinct() %>%   # this distinct drops any duplicates, inevitable with 100k+ images
   pivot_longer(c('crop_status','dominant_cover','crop_type'), names_to='category', values_to='class_value') %>%
   left_join(class_descriptions, by=c('category','class_value')) %>%
   select(phenocam_name, filename, year, date, category, data_type, true_class = class_description)
 
+sample_sizes = all_training_data %>%
+  count(category, true_class, data_type) %>%
+  rename(class = true_class, sample_size=n)
+
+# order things correctly for the figures. These are in reverse since ggplot starts
+# from the bottom
+class_order = c('blurry','no_crop','water','snow','residue','soil','vegetation',
+                'unknown_plant','other','alfalfa','soybean','wheat/barley','corn',
+                'senesced','senescing','flowers','growth','emergence',
+                'overall')
+class_labels = str_to_title(str_replace(class_order,'_',' '))
 
 #-------------------------
-
 # possible values from caret confustion matrix:
 # 'sensitivity','specificity','pos_pred_value','neg_pred_value','precision','recall','f1',
 # 'prevalence','detection_rate','detection_prevalence','balanced_accuracy'
@@ -78,18 +98,23 @@ get_stats = function(d, stats = c('f1','balanced_accuracy')){
   
 }
 
-all_data = all_training_data %>%
-  left_join(select(max_probability,filename,category,maxprob_class), by=c('filename','category'))
-sample_sizes = all_data %>%
-  count(category, true_class, data_type) %>%
-  rename(class = true_class, sample_size=n)
-# 
-# overal_stats = all_data %>%
-#   rename(predicted_class = maxprob_class) %>%
-#   get_stats(stats=c('sensitivity','specificity','f1')) %>%
-#   left_join(sample_sizes)
+#-------------------------
+# Evaluation of the original VGG16 predictions before post-processing
+#-------------------------
 
-prediction_stats = all_data %>%
+# sanity check that all training data used here for validation actually has a max probability class assigned.
+all_training_data %>%
+  left_join(select(max_probability,filename,category,maxprob_class), by=c('filename','category')) %>%
+  group_by(filename) %>% 
+  summarise(has_maxprob_class = sum(is.na(maxprob_class))==0) %>%
+  ungroup() %>%
+  summarise(percent_with_maxprob=mean(has_maxprob_class),
+            num_with_maxprob=sum(has_maxprob_class))
+
+original_classification_data = all_training_data %>%
+  left_join(select(max_probability,filename,category,maxprob_class), by=c('filename','category'))
+
+original_prediction_stats = original_classification_data %>%
   rename(predicted_class = maxprob_class) %>%
   group_by(category, data_type) %>%
   nest() %>%
@@ -99,84 +124,31 @@ prediction_stats = all_data %>%
   left_join(sample_sizes, by=c('category','class','data_type'))
 
 
-
-# table_row_order = tribble(
-#   ~category, ~class, ~rank,
-#   'dominant_cover', 'blurry', 1,
-#   'dominant_cover', 'vegetation', 2,
-#   'dominant_cover', 'residue', 3,
-#   'dominant_cover', 'soil', 4,
-#   'dominant_cover', 'snow', 5,
-#   'dominant_cover', 'water', 6,
-#   
-#   'crop_type', 'blurry', 7,
-#   'crop_type', 'unknown_plant', 8,
-#   'crop_type', 'corn', 9,
-#   'crop_type', 'wheat/barley', 10,
-#   'crop_type', 'soybean', 11,
-#   'crop_type', 'alfalfa', 12,
-#   'crop_type', 'other', 13,
-#   'crop_type', 'no_crop', 14,
-#   
-#   'crop_status', 'blurry', 15,
-#   'crop_status', 'emergence', 16,
-#   'crop_status', 'growth', 17,
-#   'crop_status', 'flowers', 18,
-#   'crop_status', 'senescing', 19,
-#   'crop_status', 'senesced', 20,
-#   'crop_status', 'no_crop', 21,
-# )
-
-# # Table formatting stuff happens here
-# prediction_stats %>%
-#   rename(metric = term, metric_value = estimate) %>%
-#   mutate(metric_value = case_when(
-#     metric=='sample_size' ~ as.character(metric_value),                     # for sample size keep the same
-#     TRUE ~ trimws(format(round(metric_value,2),drop0trailing=F)))) %>% # for decimals keep 2 sig. digis.
-#   pivot_wider(names_from = c('metric','data_type'), values_from='metric_value') %>% View()
-#   select(category, class, sample_size, starts_with('sensitivity'), starts_with('specificity'), starts_with('f1'))%>%   # column order of table
-#   #mutate(error_text = paste0(val,', ',train)) %>%
-#   #select(-train, -val) %>%
-#   #pivot_wider(names_from = 'metric', values_from = 'error_text') %>%
-#   left_join(table_row_order, by=c('category','class')) %>%
-#   arrange(rank) %>%
-#   select(-rank) %>%
-#   kable(format = 'latex', col.names = c('Category','Class','Sample Size','Training','Validation','Training','Validation','Training','Validation')) %>%
-#   add_header_above(c(' '=3, 'Sensitivity' = 2, 'Specificity' = 2, 'F1 Score' = 2))
-
 # summary stats for each category
-overal_stats = prediction_stats %>%
+original_prediction_overal_stats = original_prediction_stats %>%
   group_by(category, term, data_type) %>%
   summarise(estimate = sum(estimate*sample_size)/sum(sample_size),
             sample_size=sum(sample_size)) %>%
   mutate(class = 'overall')
 
-# order things correctly for the figure. These are in reverse since ggplot starts
-# from the bottom
-class_order = c('blurry','no_crop','water','snow','residue','soil','vegetation',
-                'unknown_plant','other','alfalfa','soybean','wheat/barley','corn',
-                'senesced','senescing','flowers','growth','emergence',
-                'overall')
-class_labels = str_to_title(str_replace(class_order,'_',' '))
-  
 # TODO: maybe put the crop_status in the correct biological order, 
-prediction_stats = prediction_stats %>%
-    bind_rows(overal_stats) %>%
+original_prediction_stats = original_prediction_stats %>%
+    bind_rows(original_prediction_overal_stats) %>%
     mutate(class = factor(class, levels = class_order, labels=class_labels, ordered = T)) %>%
     mutate(facet_label = paste0(str_to_title(term),': ',str_to_title(str_replace(category,'_',' ')))) 
 
-error_labels = prediction_stats %>%
+original_prediction_error_labels = original_prediction_stats %>%
     mutate(estimate = trimws(format(round(estimate,2),drop0trailing=F))) %>%
     pivot_wider(names_from='data_type', values_from=c('estimate','sample_size')) %>%
     mutate(error_text = paste0(estimate_val,', ',estimate_train,' (',sample_size_val+sample_size_train,')'))
     
-prediction_stats %>%
+original_prediction_stats %>%
     select(-sample_size) %>%
     pivot_wider(names_from='data_type', values_from='estimate') %>%
 ggplot(aes(y=class)) + 
     geom_segment(aes(x=0,xend=train,yend=class), color='grey60', size=8) + 
     geom_segment(aes(x=0,xend=val,yend=class), size=3) + 
-    geom_text(data=error_labels, aes(x=1.025, label=error_text), size=4, hjust=0) + 
+    geom_text(data=original_prediction_error_labels, aes(x=1.025, label=error_text), size=4, hjust=0) + 
     scale_x_continuous(breaks=c(0.3,0.5,0.7,0.9), labels=c('0.3','0.5','0.7','0.9')) + 
     coord_cartesian(xlim=c(0.25,1.8)) + 
     facet_wrap(~fct_rev(facet_label), ncol=3, scales='free_y') +
@@ -192,90 +164,70 @@ ggplot(aes(y=class)) +
     labs(x='Accuracy Metric Value')
 
 
+#-------------------------
+# Evaluation of the predictions after post-processing (ie. after the HMM step)
+#-------------------------
 
-#---------------
-# Below here is exploratory stuff
-#---------------
-
-
-# blurry images are exluded from the final hmm model. their original annotation category was just "unknown", which fyi is
-# distinct from "unknown_plant" in the crop type.
-original_training_data = original_training_data %>%
-  filter(true_class != 'unknown') %>%
-  mutate(true_class)
-
-# Compare them ----
-library(caret)
-
-all_data = original_training_data %>%
-  left_join(max_probability, by=c('phenocam_name','date','category')) %>%
+#---------------------------------
+# sanity check that all training data used here for validation actually has an hmm class assigned.
+# some images will be lost due to incomplete/short timeseries.
+all_training_data %>%
   left_join(hmm_predictions, by=c('phenocam_name','date','category')) %>%
-  pivot_longer(c('true_class','maxprob_class','hmm_class'), names_to='source',values_to='class') %>%
-  mutate(class = factor(class)) %>%    # everything should be a factor with the same levels
-  #mutate(class = recode(class, fallow = 'other')) %>%
-  pivot_wider(names_from = 'source', values_from='class') %>%
-  filter(complete.cases(.))
+  group_by(phenocam_name, year.x, filename) %>% 
+  summarise(has_hmm_class = sum(is.na(hmm_class))==0) %>%
+  ungroup() %>%
+  summarise(percent_with_hmm=mean(has_hmm_class),
+          num_with_hmm=sum(has_hmm_class))
 
-# Checking out some of the coverage differences between the full and training datasets
-# training_dates = all_data %>% 
-#   mutate(month = lubridate::month(date)) %>%
-#   group_by(phenocam_name, year, month) %>%
-#   summarise(n_training_dates = n_distinct(date)) %>%
-#   ungroup() 
-#
-# prediction_dates = predictions %>%
-#   mutate(month = lubridate::month(date)) %>%
-#   group_by(phenocam_name, year, month) %>%
-#   summarise(n_prediction_dates = n_distinct(date)) %>%
-#   ungroup()
-# 
-# prediction_dates %>%
-#   left_join(training_dates, by=c('phenocam_name','year','month')) %>%
-#   mutate(n_training_dates = replace_na(n_training_dates,0),
-#          diff = n_prediction_dates - n_training_dates) %>%
-#   View()
+# Remote blurry since it's not in the data post-processing
+hmm_classification_data = all_training_data %>%
+  left_join(hmm_predictions, by=c('phenocam_name','date','category')) %>%
+  #filter(category != 'crop_type') %>%
+  filter(true_class != 'blurry') %>%
+  filter(true_class != 'unknown_plant')
 
-
-
-caret::confusionMatrix(data= all_data$maxprob_class, reference = all_data$true_class)
-caret::confusionMatrix(data= all_data$hmm_class, reference = all_data$true_class)
-caret::multiClassSummary(data= select(all_data, pred=hmm_class, obs=true_class))
-
-# possible values from caret confustion matrix:
-# 'sensitivity','specificity','pos_pred_value','neg_pred_value','precision','recall','f1',
-# 'prevalence','detection_rate','detection_prevalence','balanced_accuracy'
-get_stats = function(d, stats = c('f1','balanced_accuracy')){
-  all_classes = unique(c(d$true_class, d$predicted_class))
-  d$true_class = factor(d$true_class, levels = all_classes)
-  d$predicted_class = factor(d$predicted_class, levels = all_classes)
-  x = caret::confusionMatrix(data = d$predicted_class, reference = d$true_class)
-  
-  x %>% 
-    broom::tidy() %>% 
-    select(term, class, estimate) %>% 
-    filter(class %in% all_classes) %>% 
-    filter(term %in% stats)
-  
-}
-
-# For testing
-# d = all_data %>%
-#   pivot_longer(c('maxprob_class','hmm_class'), names_to='prediction_type',values_to='predicted_class') %>%
-#   filter(category=='dominant_cover', prediction_type=='maxprob_class')
-
-sample_sizes = all_data %>%
-  count(category, true_class, name='support') %>%
-  rename(class = true_class)
-
-prediction_stats = all_data %>%
-  pivot_longer(c('maxprob_class','hmm_class'), names_to='prediction_type',values_to='predicted_class') %>%
-  group_by(category, prediction_type) %>%
+hmm_prediction_stats = hmm_classification_data %>%
+  rename(predicted_class = hmm_class) %>%
+  group_by(category, data_type) %>%
   nest() %>%
-  mutate(stats = map(data, ~get_stats(., stats='f1'))) %>%
+  mutate(stats = map(data, ~get_stats(., stats=c('precision','recall','f1')))) %>%
   select(-data) %>%
-  unnest(stats)
+  unnest(stats) %>%
+  left_join(sample_sizes, by=c('category','class','data_type'))
 
+hmm_overal_stats = hmm_prediction_stats %>%
+  group_by(category, term, data_type) %>%
+  summarise(estimate = sum(estimate*sample_size)/sum(sample_size),
+            sample_size=sum(sample_size)) %>%
+  mutate(class = 'overall')
 
-stats1 = prediction_stats %>%
-  pivot_wider(names_from = 'prediction_type',values_from='estimate') %>%
-  left_join(sample_sizes, by=c('category','class'))
+hmm_prediction_stats = hmm_prediction_stats %>%
+  bind_rows(hmm_overal_stats) %>%
+  mutate(class = factor(class, levels = class_order, labels=class_labels, ordered = T)) %>%
+  mutate(facet_label = paste0(str_to_title(term),': ',str_to_title(str_replace(category,'_',' ')))) 
+
+hmm_error_labels = hmm_prediction_stats %>%
+  mutate(estimate = trimws(format(round(estimate,2),drop0trailing=F))) %>%
+  pivot_wider(names_from='data_type', values_from=c('estimate','sample_size')) %>%
+  mutate(error_text = paste0(estimate_val,', ',estimate_train,' (',sample_size_val+sample_size_train,')'))
+
+hmm_prediction_stats %>%
+  select(-sample_size) %>%
+  pivot_wider(names_from='data_type', values_from='estimate') %>%
+  ggplot(aes(y=class)) + 
+  geom_segment(aes(x=0,xend=train,yend=class), color='grey60', size=8) + 
+  geom_segment(aes(x=0,xend=val,yend=class), size=3) + 
+  geom_text(data=hmm_error_labels, aes(x=1.025, label=error_text), size=4, hjust=0) + 
+  scale_x_continuous(breaks=c(0.3,0.5,0.7,0.9), labels=c('0.3','0.5','0.7','0.9')) + 
+  coord_cartesian(xlim=c(0.25,1.8)) + 
+  facet_wrap(~fct_rev(facet_label), ncol=3, scales='free_y') +
+  theme_bw() +
+  theme(axis.title.y = element_blank(),
+        axis.title.x = element_text(size=14),
+        axis.text  = element_text(color='black', size=12),
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_line(color='grey80'),
+        panel.grid.minor   = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_text(size=14, hjust=0)) +
+  labs(x='Accuracy Metric Value')
