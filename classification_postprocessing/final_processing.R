@@ -17,6 +17,12 @@ hmm_predictions = read_csv('./data/hmm_output.csv') %>%
 crop_type_predictions = read_csv('./data/image_predictions_for_final_processing-crop_type.csv') %>%
   select(phenocam_name, date, crop_class = class, probability)
 
+# unknown_plant is used during emergence when it's very hard to tell the actual plant.
+# With the full timeeries available, it's possible to know the crop type later
+# on and thus propagate that knowledge back to the emergence stage.
+crop_type_predictions = crop_type_predictions %>%
+  filter(crop_class != 'unknown_plant')
+
 # for each phenocam identify each unique crop sequence
 # crop_sequence_id line from adapted from https://stackoverflow.com/a/42734207/6615512
 unique_crop_segments = hmm_predictions %>%
