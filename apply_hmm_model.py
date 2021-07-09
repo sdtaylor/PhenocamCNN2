@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 
 from hmm_stuff.hmm_model_definitions import (dominant_cover_hmm_model,
-                                             crop_type_hmm_model,
                                              crop_status_hmm_model,
                                              )
 
@@ -12,9 +11,6 @@ from hmm_stuff.hmm_model_definitions import (dominant_cover_hmm_model,
 category_info = {'dominant_cover':{'prediction_file':'data/image_predictions_for_hmm-dominant_cover.csv',
                                    'observed_classes':['vegetation','residue','soil','snow','water'],
                                    'model_function':dominant_cover_hmm_model},
-#                 'crop_type':     {'prediction_file':'data/image_predictions_for_hmm-crop_type.csv',
-#                                   'observed_classes':['unknown_plant','large_grass','small_grass','other','fallow','no_crop'],
-#                                   'model_function':crop_type_hmm_model},
                  'crop_status':   {'prediction_file':'data/image_predictions_for_hmm-crop_status.csv',
                                    'observed_classes':['emergence','growth','flowers','senescing','senesced','no_crop'],
                                    'model_function':crop_status_hmm_model},
