@@ -114,15 +114,15 @@ def dominant_cover_hmm_model(nn_pobability_matrix,
         model.add_transition(model.start, s, 1)
         
     model.add_transitions(s0_veg,     [s0_veg, s1_residue, s2_soil, s3_snow, s4_water],
-                                      [95.,    1.0,        1.0,     1.0,     1.0])
+                                      [95.,    1.25,       1.25,    1.25,    1.25])
     model.add_transitions(s1_residue, [s0_veg, s1_residue, s2_soil, s3_snow, s4_water],
-                                      [1.0,    95.,        1.0,     1.0,     1.0])
+                                      [1.25,   95.,        1.25,    1.25,    1.25])
     model.add_transitions(s2_soil,    [s0_veg, s1_residue, s2_soil, s3_snow, s4_water],
-                                      [1.0,    1.0,        95.,     1.0,     1.0])
+                                      [5/3.,   0.,         95.,     5/3.,    5/3.])
     model.add_transitions(s3_snow,    [s0_veg, s1_residue, s2_soil, s3_snow, s4_water],
-                                      [1.0,    1.0,        1.0,     95.,     1.0])
+                                      [1.25,   1.25,       1.25,    95.,     1.25])
     model.add_transitions(s4_water,   [s0_veg, s1_residue, s2_soil, s3_snow, s4_water],
-                                      [1.0,    1.0,        1.0,     1.0,     95.])
+                                      [1.25,   1.25,       1.25,    1.25,     95.])
         
     model.bake(verbose=False)
     
