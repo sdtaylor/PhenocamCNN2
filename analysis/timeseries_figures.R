@@ -39,10 +39,10 @@ max_probability = original_predictions %>%
   select(phenocam_name, filename, year, date, category, class)
 
 
-phenocam_to_plot = 'arsope3ltar'
-year_to_plot     = 2019
+make_timeseries_figure = function(phenocam_to_plot, year_to_plot){
+  #phenocam_to_plot = 'arsope3ltar'
+  #year_to_plot     = 2020
 
-  
   figs = list()
   i = 1
   
@@ -79,6 +79,7 @@ year_to_plot     = 2019
       plot_subtitle = 'Crop Type'
       color_palette = c("#cc79a7", "#d55e00", "#000000", "#E69F00", "#56B4E9", "#009E73",'#66a61e', "#F0E442")
     }
+    plot_subtitle = paste(plot_subtitle,'-',phenocam_to_plot,'-',year_to_plot, sep=' ')
   
     # for the given category get all th relevant classes, in the correct order,
     # and include entires for the MaxP and HMM stuff on top
@@ -163,5 +164,13 @@ year_to_plot     = 2019
   }
   
   wrap_plots(figs) + plot_layout(ncol=1)
-  
+}
+
+
+site = 'arsmorris2'
+year = 2020
+fig = make_timeseries_figure(site, year)
+figure_filename = paste0('./manuscript/figures/timeseries-',site,'-',year,'.png')
+ggsave(filename = figure_filename, plot=fig, height=15, width=8, dpi=150)
+
                
