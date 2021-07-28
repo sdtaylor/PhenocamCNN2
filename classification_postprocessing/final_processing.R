@@ -32,8 +32,11 @@ unique_crop_segments = hmm_predictions %>%
   group_by(phenocam_name) %>%
   mutate(crop_sequence_id = cumsum( c(1,diff(date)) !=1  )) %>%
   ungroup() %>%
-  select(phenocam_name, date, crop_sequence_id)
+  select(phenocam_name, date, crop_sequence_id, crop_status)
 
+# for each phenocam and crop sequence identify the
+# crop type with the highest probability across all days
+# within the sequence
 sequence_crop_types = crop_type_predictions %>%
   left_join(unique_crop_segments, by=c('phenocam_name','date')) %>%
   filter(!is.na(crop_sequence_id)) %>%
@@ -44,7 +47,24 @@ sequence_crop_types = crop_type_predictions %>%
   slice_max(total_probability) %>%
   ungroup()
 
-# sanity check, 1 crop per phenocam/crop_sequence_id
+# the  unknown crop type was dropped above, but here we put it back for *some* instances.
+# 1. for short crop sequences (<= 60 days) where the status is predominately emergence.
+# 2. if the most likely crop type was "no_crop", which is unlikely since no crop would not
+#    have been chosen in the crop status category for the respective sequence, thus a crop is present.
+unknown_crop_identification = unique_crop_segments %>%
+  group_by(phenocam_name, crop_sequence_id) %>%
+  summarise(most_common_status = names(sort(table(crop_status), decreasing=T)[1]),
+            n_days = n()) %>%
+  ungroup() %>%
+  mutate(make_crop_type_unknown = most_common_status=='emergence' & n_days <= 60) %>%
+  select(phenocam_name, crop_sequence_id, make_crop_type_unknown)
+
+sequence_crop_types = sequence_crop_types %>%
+  left_join(unknown_crop_identification,  by=c('phenocam_name','crop_sequence_id')) %>%
+  mutate(crop_class = ifelse(make_crop_type_unknown, 'unknown_plant', crop_class)) %>%
+  mutate(crop_class = ifelse(crop_class == 'no_crop', 'unknown_plant', crop_class))
+
+# sanity check, 1 crop type per phenocam/crop_sequence_id
 if(!all(count(sequence_crop_types, phenocam_name, crop_sequence_id)$n)==1) stop('more than 1 crop type in some phenocam/crop_sequence_id combinations')
 
 final_crop_types = unique_crop_segments %>%
