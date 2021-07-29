@@ -94,7 +94,7 @@ make_timeseries_figure = function(phenocam_to_plot, year_to_plot){
     class_labels     = c(class_labels, 'MaxP','HMM')
     
     # MaxP and HMM geom_segment size
-    segment_height = 0.2
+    segment_height = 0.25
     segment_size = 0.8
     
     # alternative style plot with probabilites as lines like a timeseries.
@@ -123,15 +123,17 @@ make_timeseries_figure = function(phenocam_to_plot, year_to_plot){
     f = ggplot(site_predictions, aes(x=date, y=class)) +
       geom_point(aes(color=class, size=probability)) +
       scale_color_manual(values = color_palette) +
-      scale_x_date(date_breaks = '2 month', date_labels = '%b. %d', expand = expansion(0.01)) +
+      scale_x_date(date_breaks = '2 month', date_labels = '%b.%e', expand = expansion(0.01)) +
       scale_y_discrete(limits=category_classes, labels = class_labels) +
       theme_bw() +
-      theme(axis.text = element_text(color='black', size=10),
+      theme(axis.text = element_text(color='black', size=15),
             axis.title.y = element_blank(),
-            legend.text = element_text(size=10),
-            legend.title = element_text(size=12),
+            panel.grid.major.x = element_line(color='grey80',size=0.5),
+            panel.grid.minor.x = element_line(color='grey80',size=0.5),
+            legend.text = element_text(size=14),
+            legend.title = element_text(size=18),
             legend.position = ifelse(i==3, 'bottom','none'),
-            plot.subtitle = element_text(size=14),
+            plot.subtitle = element_text(size=20),
             panel.background = element_rect(fill='grey95')) +
       labs(size='Probability',x='',color='', subtitle = plot_subtitle) +
       guides(color=guide_none(),
@@ -141,20 +143,20 @@ make_timeseries_figure = function(phenocam_to_plot, year_to_plot){
     # doing these separately for each category because it's a *very* funky plot.
     if(this_category == 'dominant_cover') {
       figs[[i]] = f +
-        geom_hline(yintercept = 7, size=8, color='grey80') +      # the grey background behind HMM and MaxP lines
-        geom_hline(yintercept = 8, size=8, color='grey80') + 
+        geom_hline(yintercept = 7, size=7, color='grey85') +      # the grey background behind HMM and MaxP lines
+        geom_hline(yintercept = 8, size=7, color='grey85') + 
         geom_segment(data=site_max_prob, aes(y=7-segment_height,yend=7+segment_height,x=date,xend=date,color=class),size=segment_size) + # HMM and MaP bars, each date is a vertical
         geom_segment(data=site_hmm,      aes(y=8-segment_height,yend=8+segment_height,x=date,xend=date,color=class),size=segment_size)   # segment with respective color
     } else if(this_category == 'crop_status') {
       figs[[i]] = f +
-        geom_hline(yintercept = 8, size=8, color='grey80') +      # the grey background behind HMM and MaxP lines
-        geom_hline(yintercept = 9, size=8, color='grey80') + 
+        geom_hline(yintercept = 8, size=7, color='grey85') +      # the grey background behind HMM and MaxP lines
+        geom_hline(yintercept = 9, size=7, color='grey85') + 
         geom_segment(data=site_max_prob, aes(y=8-segment_height,yend=8+segment_height,x=date,xend=date,color=class),size=segment_size) + # HMM and MaP bars, each date is a vertical
         geom_segment(data=site_hmm,      aes(y=9-segment_height,yend=9+segment_height,x=date,xend=date,color=class),size=segment_size)   # segment with respective color
     } else if(this_category == 'crop_type') {
       figs[[i]] = f +
-        geom_hline(yintercept = 9, size=8, color='grey80') +      # the grey background behind HMM and MaxP lines
-        geom_hline(yintercept = 10, size=8, color='grey80') + 
+        geom_hline(yintercept = 9, size=7, color='grey85') +      # the grey background behind HMM and MaxP lines
+        geom_hline(yintercept = 10, size=7, color='grey85') + 
         geom_segment(data=site_max_prob, aes(y=9-segment_height,yend=9+segment_height,x=date,xend=date,color=class),size=segment_size) + # HMM and MaP bars, each date is a vertical
         geom_segment(data=site_hmm,      aes(y=10-segment_height,yend=10+segment_height,x=date,xend=date,color=class),size=segment_size)   # segment with respective color
     }
