@@ -142,7 +142,7 @@ original_prediction_error_labels = original_prediction_stats %>%
     pivot_wider(names_from='data_type', values_from=c('estimate','sample_size')) %>%
     mutate(error_text = paste0(estimate_val,', ',estimate_train,' (',sample_size_val+sample_size_train,')'))
     
-original_prediction_stats %>%
+base_stats_figure = original_prediction_stats %>%
     select(-sample_size) %>%
     pivot_wider(names_from='data_type', values_from='estimate') %>%
 ggplot(aes(y=class)) + 
@@ -155,13 +155,16 @@ ggplot(aes(y=class)) +
     theme_bw() +
     theme(axis.title.y = element_blank(),
           axis.title.x = element_text(size=14),
-          axis.text  = element_text(color='black', size=12),
+          axis.text.y  = element_text(color='black', size=13.5),
+          axis.text.x  = element_text(color='black', size=12),
           panel.grid.major.y = element_blank(),
           panel.grid.major.x = element_line(color='grey80'),
           panel.grid.minor   = element_blank(),
           strip.background = element_blank(),
-          strip.text = element_text(size=14, hjust=0)) +
+          strip.text = element_text(size=14.5, hjust=0)) +
     labs(x='Accuracy Metric Value')
+
+ggsave('./manuscript/figures/fig1_base_stats.png', plot=base_stats_figure, height=32, width=28, unit='cm', dpi=150)
 
 
 #-------------------------
@@ -179,12 +182,16 @@ all_training_data %>%
   summarise(percent_with_hmm=mean(has_hmm_class),
           num_with_hmm=sum(has_hmm_class))
 
-# Remote blurry since it's not in the data post-processing
+# Remove blurry since it's not in the data post-processing
+# Remove unknown plant class. Crop type category is treated
+# in a special way in the post-processing, so performance metrics 
+# of unknown plant class woudl be uninformative.
 hmm_classification_data = all_training_data %>%
   left_join(hmm_predictions, by=c('phenocam_name','date','category')) %>%
   #filter(category != 'crop_type') %>%
   filter(true_class != 'blurry') %>%
-  filter(true_class != 'unknown_plant')
+  filter(true_class != 'unknown_plant') %>%
+  filter(hmm_class != 'unknown_plant') 
 
 hmm_prediction_stats = hmm_classification_data %>%
   rename(predicted_class = hmm_class) %>%
@@ -211,7 +218,7 @@ hmm_error_labels = hmm_prediction_stats %>%
   pivot_wider(names_from='data_type', values_from=c('estimate','sample_size')) %>%
   mutate(error_text = paste0(estimate_val,', ',estimate_train,' (',sample_size_val+sample_size_train,')'))
 
-hmm_prediction_stats %>%
+hmm_stat_figure = hmm_prediction_stats %>%
   select(-sample_size) %>%
   pivot_wider(names_from='data_type', values_from='estimate') %>%
   ggplot(aes(y=class)) + 
@@ -224,10 +231,13 @@ hmm_prediction_stats %>%
   theme_bw() +
   theme(axis.title.y = element_blank(),
         axis.title.x = element_text(size=14),
-        axis.text  = element_text(color='black', size=12),
+        axis.text.y  = element_text(color='black', size=13.5),
+        axis.text.x  = element_text(color='black', size=12),
         panel.grid.major.y = element_blank(),
         panel.grid.major.x = element_line(color='grey80'),
         panel.grid.minor   = element_blank(),
         strip.background = element_blank(),
-        strip.text = element_text(size=14, hjust=0)) +
+        strip.text = element_text(size=14.5, hjust=0)) +
   labs(x='Accuracy Metric Value')
+
+ggsave('./manuscript/figures/fig2_hmm_stats.png', plot=hmm_stat_figure, height=28, width=28, unit='cm', dpi=150)
