@@ -183,9 +183,9 @@ def crop_status_hmm_model(nn_pobability_matrix,
     model.add_transitions(s2_fls,     [s0_emerge, s1_growth, s2_fls, s3_sencing, s4_senced, s5_none],
                                       [0.,        0.,        90.,    5.,         0.,        5.])
     model.add_transitions(s3_sencing, [s0_emerge, s1_growth, s2_fls, s3_sencing, s4_senced, s5_none],
-                                      [0. ,       0.,        0.,     90.,        5.,        5.])
+                                      [0. ,       1.,        0.,     90.,        4.5,       4.5])
     model.add_transitions(s4_senced,  [s0_emerge, s1_growth, s2_fls, s3_sencing, s4_senced, s5_none],
-                                      [0.,        0.,        0.,     0.,         90.,       10.])
+                                      [0.,        1.,        0.,     0.,         90.,       9.])
     model.add_transitions(s5_none,    [s0_emerge, s1_growth, s2_fls, s3_sencing, s4_senced, s5_none],
                                       [10.,       0,        0.,     0.,         0.,        90.])
         
