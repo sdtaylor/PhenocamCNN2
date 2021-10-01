@@ -31,5 +31,7 @@ ggplot() +
 # And a table
 read_csv('site_list.csv') %>%
   mutate(ltar_site = ifelse(phenocam_name %in% ltar_sites, 'yes','no')) %>%
+  mutate(number=row_number()) %>%
+  select(number, phenocam_name, ltar_site, everything()) %>%
   kable(format='simple')
   
