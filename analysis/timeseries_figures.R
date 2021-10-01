@@ -46,7 +46,7 @@ make_timeseries_figure = function(phenocam_to_plot, year_to_plot){
   figs = list()
   i = 1
   
-  for(this_category in c('dominant_cover','crop_status','crop_type')){
+  for(this_category in c('dominant_cover','crop_type','crop_status')){
   #for(this_category in c('crop_type','dominant_cover','crop_status')){
     site_predictions = original_predictions %>%
       filter(phenocam_name == phenocam_to_plot, year==year_to_plot) %>%
@@ -69,14 +69,14 @@ make_timeseries_figure = function(phenocam_to_plot, year_to_plot){
     
       
     if(this_category == 'crop_status') {
-      plot_subtitle = 'Crop Status'
+      plot_subtitle = 'C. Crop Status'
       #color_palette = c('red','#d55e00', viridis::viridis(5, end=0.85, direction = -1))
       color_palette = c('#cc79a7','#d55e00','#582f0e','#a68a64','#007f5f','#80b918','#d4d700')
     } else if(this_category == 'dominant_cover') {
-      plot_subtitle = 'Dominant Cover'
+      plot_subtitle = 'A. Dominant Cover'
       color_palette = c('#cc79a7','#0072b2','grey60','#d55e00','#e69f00','#80b918')
     } else if(this_category == 'crop_type') {
-      plot_subtitle = 'Crop Type'
+      plot_subtitle = 'B. Crop Type'
       color_palette = c("#cc79a7", "#d55e00", "#000000", "#E69F00", "#56B4E9", "#009E73",'#66a61e', "#F0E442")
     }
     plot_subtitle = paste(plot_subtitle,'-',phenocam_to_plot,'-',year_to_plot, sep=' ')
@@ -171,19 +171,19 @@ make_timeseries_figure = function(phenocam_to_plot, year_to_plot){
 #--------------------------------------------
 # make timeseries figures for a few select sites/years
 #--------------------------------------------
-
-site = 'arsmorris2'
-year = 2020
-fig = make_timeseries_figure(site, year)
-figure_filename = paste0('./manuscript/figures/timeseries-',site,'-',year,'.png')
-ggsave(filename = figure_filename, plot=fig, height=10, width=10, dpi=150)
-
-
-site = 'bouldincorn'
-year = 2018
-fig = make_timeseries_figure(site, year)
-figure_filename = paste0('./manuscript/figures/timeseries-',site,'-',year,'.png')
-ggsave(filename = figure_filename, plot=fig, height=15, width=8, dpi=150)
+# 
+# site = 'arsmorris2'
+# year = 2020
+# fig = make_timeseries_figure(site, year)
+# figure_filename = paste0('./manuscript/figures/timeseries-',site,'-',year,'.png')
+# #ggsave(filename = figure_filename, plot=fig, height=10, width=10, dpi=150)
+# 
+# 
+# site = 'bouldincorn'
+# year = 2018
+# fig = make_timeseries_figure(site, year)
+# figure_filename = paste0('./manuscript/figures/timeseries-',site,'-',year,'.png')
+# #ggsave(filename = figure_filename, plot=fig, height=15, width=8, dpi=150)
 
 
 #--------------------------------------------
