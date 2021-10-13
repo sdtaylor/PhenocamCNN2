@@ -22,24 +22,24 @@ Deep learning models for identifying crop and field attributes from near surface
 5. `image_annotations.csv` - The  final annotation file from imagant, eg. the file with all the training/validation data labels. This is used in model fitting and final evaluation.
 
 ## C. Model Fitting and prediction
-1. `fit_keras_model.py` - VGG16 model fitting. Uses all annotated and "extra" images to fit the model and writes the keras file `data/vgg16_v4_20epochs.h5`.
+1. `fit_keras_model.py` - VGG16 model fitting. Uses all annotated and "extra" images to fit the model and writes the keras file `data/vgg16_v4_20epochs.h5`. Excluding images due to low class prevalance, the train/test split, and resampling using weights is done here.
 2. `apply_keres_model.py` - Using the fitted VGG16 model make predictions on everything in `data/extra_phenocam_train_images/` and `data/phenocam_all_images/`. Writes those predictions to `data/vgg16_v4_20epochs_predictions.csv` 
 
 ## D. Postprocessing
 **classification_postprocessing/**  
-1. `prep_predictions_for_hmm.R` - takes the file `data/vgg16_v4_20epochs_predictions.csv` and preps the predictions for the HMM aspect. Creates several files `data/image_predictions_for_*`. 
-2. `final_processing.R`- Takes output from the  HMM model (`./data/hmm_output.csv`) and applies the final post-processing steps (see text) producing `./data/final_predictions.csv`.
-3. `postprocessing_tools.R` - helper functions.
+1. `prep_predictions_for_hmm.R` - takes the file `data/vgg16_v4_20epochs_predictions.csv` and preps the predictions for the HMM aspect (see `apply_hmm_model.py`). Creates several files `data/image_predictions_for_*`. 
+2. `final_processing.R`- Takes output from the HMM model (`./data/hmm_output.csv`) and applies the final post-processing steps (see text) producing `./data/final_predictions.csv`.
+3. `postprocessing_tools.R` - helper functions. 
 
 ## E. Hidden Markov Model (HMM)
 1. `hmm_stuff/hmm_model_definitions.py` - This describes the HMM models using the pomegranate package. https://pomegranate.readthedocs.io.  
-2. `apply_hmm_model.py` - Applies HMM model to the  `data/image_predictions_for_*` files. 
+2. `apply_hmm_model.py` - Applies HMM model to the  `data/image_predictions_for_*` files, applies the HMM models, and creates `./data/hmm_output.csv`. 
 
 ## F. Analayis
 **analysis/**  
 1. `evaluate_predictions.R` - calculate error metrcis and create manuscript F1/precision/recall figures. This uses all files in the process:   `data/vgg16_v4_20epochs_predictions.csv`, `image_annotations.csv`, and `./data/final_predictions.csv`.
 2. `timeseries_figures.R` - produces the colorful timeseries figures for each site year.
-3. `site_map_and_table.R` - produces some supplemental material. 
+3. `site_map_and_table.R` - produces supplemental map and site table. 
 4. `single_image_diagnostic_plots.R` - produces the supplemental figures where prediction probabilites for single images are displayed.
     
     
