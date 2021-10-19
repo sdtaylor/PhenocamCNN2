@@ -55,6 +55,18 @@ The modelling workflow went as so.
     3. `final_processing.R`
 5. Analize and Visualize (F).
     
+## Data
+None of the phenocam images are in the repo but can be downloaded with the scripts in `phenocam_data_prep/`.  
+The following files are not in the github repo because they are too large, but can be found in the zenodo repo ([https://doi.org/10.5281/zenodo.5579797](https://doi.org/10.5281/zenodo.5579797))  
+- `data/vgg16_v4_20epochs.h5` - this is the fitted keras classification model.
+- `data/vgg16_v4_20epochs_predictions.csv` - this contains the initial image classifications prior to post-processing.
+- `data/final_predictions.csv` - the final predictions after post-processing.
     
-    
+## Using the predictions
+If you'd like to use the predictions in remote sensing models or elsewhere you need the following two files:
+- `data/final_predictions.csv` - the final predictions after post-processing.
+- `site_list.csv` - site metadata.
+
+`final_predictions.csv` has, for all available sites, a date and predicted status for the three categories. `site_list.csv` has the latitude and longitude of all sites, and other metadata from the phenocam database. The files are joined via the `phenocam_name` column.   
+The `final_predictions.csv` file has predictions for sites in `site_list.csv`, given the constraints described in the paper, through 2021-09-27. 
     
