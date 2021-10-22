@@ -1,6 +1,6 @@
 This is the repository for the following study:
 
-Deep learning models for identifying crop and field attributes from near surface cameras. 
+Taylor, SD and Browning, DM, 2021. Deep learning models for identifying crop and field attributes from near surface cameras. bioRxiv. [https://doi.org/10.1101/2021.10.20.465168](https://doi.org/10.1101/2021.10.20.465168)
 
 # File Structure
 ## A. Initial Preparation
