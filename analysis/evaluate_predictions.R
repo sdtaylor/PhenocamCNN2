@@ -68,6 +68,31 @@ all_training_data = original_training_data %>%
   left_join(class_descriptions, by=c('category','class_value')) %>%
   select(phenocam_name, filename, year, date, category, data_type, true_class = class_description)
 
+# some numbers for the manuscript
+validation_sites = c('arsmorris2', 'mandani2', 'cafboydnorthltar01')
+
+val_train_split_info %>%
+  separate(filename, into=c('phenocam_name'), remove = F, extra='drop') %>%
+  mutate(is_validation_site = phenocam_name %in% c('arsmorris2', 'mandani2', 'cafboydnorthltar01')) %>%
+  count(data_type, is_validation_site)
+
+
+
+
+n_validation_site_images = all_training_data %>%
+  filter(phenocam_name %in% validation_sites) %>%
+  filter(data_type=='val') %>%
+  distinct(phenocam_name, filename) %>%
+  nrow()
+
+all_training_data %>%
+  filter(data_type=='val') %>%
+  mutate(is_validation_site = phenocam_name %in% c('arsmorris2', 'mandani2', 'cafboydnorthltar01')) %>%
+  group_by(is_validation_site) %>%
+  summarise(n_images = n_distinct(filename)) %>%
+  ungroup()
+
+
 sample_sizes = all_training_data %>%
   count(category, true_class, data_type) %>%
   rename(class = true_class, sample_size=n)
@@ -161,10 +186,25 @@ ggplot(aes(y=class)) +
           panel.grid.major.x = element_line(color='grey80'),
           panel.grid.minor   = element_blank(),
           strip.background = element_blank(),
-          strip.text = element_text(size=14.5, hjust=0)) +
+          strip.text = element_text(size=14, hjust=0)) +
     labs(x='Accuracy Metric Value')
 
-ggsave('./manuscript/figures/fig1_base_stats.png', plot=base_stats_figure, height=32, width=28, unit='cm', dpi=150)
+ggsave('./manuscript/figures/fig2_base_stats.pdf', plot=base_stats_figure, height=32, width=28, unit='cm', dpi=150)
+
+
+# some confusion matrices
+original_classification_data %>%
+  count(category, data_type, true_class, maxprob_class) %>%
+  group_by(category) %>%
+  complete(data_type, true_class, maxprob_class, fill=list(n=0)) %>%
+  ungroup() %>%
+  ggplot(aes(x=true_class, y=maxprob_class)) +
+  geom_tile(size=0.5, color='black', alpha=0) + 
+  geom_text(aes(label=n)) +
+  facet_wrap(category~data_type, scales='free',ncol=2) +
+  theme_minimal() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_line(color='black'))
 
 
 #-------------------------
@@ -237,7 +277,7 @@ hmm_stat_figure = hmm_prediction_stats %>%
         panel.grid.major.x = element_line(color='grey80'),
         panel.grid.minor   = element_blank(),
         strip.background = element_blank(),
-        strip.text = element_text(size=14.5, hjust=0)) +
+        strip.text = element_text(size=14, hjust=0)) +
   labs(x='Accuracy Metric Value')
 
-ggsave('./manuscript/figures/fig2_hmm_stats.png', plot=hmm_stat_figure, height=28, width=28, unit='cm', dpi=150)
+ggsave('./manuscript/figures/fig3_hmm_stats.pdf', plot=hmm_stat_figure, height=28, width=28, unit='cm', dpi=150)
