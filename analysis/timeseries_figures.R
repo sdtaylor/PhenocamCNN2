@@ -169,43 +169,55 @@ make_timeseries_figure = function(phenocam_to_plot, year_to_plot){
 }
 
 #--------------------------------------------
-# make timeseries figures for a few select sites/years
+# make timeseries figures for the 4 results figures
 #--------------------------------------------
 # 
-# site = 'arsmorris2'
-# year = 2020
-# fig = make_timeseries_figure(site, year)
-# figure_filename = paste0('./manuscript/figures/timeseries-',site,'-',year,'.png')
-# #ggsave(filename = figure_filename, plot=fig, height=10, width=10, dpi=150)
-# 
-# 
-# site = 'bouldincorn'
-# year = 2018
-# fig = make_timeseries_figure(site, year)
-# figure_filename = paste0('./manuscript/figures/timeseries-',site,'-',year,'.png')
-# #ggsave(filename = figure_filename, plot=fig, height=15, width=8, dpi=150)
+site = 'arsmorris2'
+year = 2020
+fig = make_timeseries_figure(site, year)
+figure_filename = paste0('./manuscript/figures/fig4-timeseries-',site,'-',year,'.pdf')
+ggsave(filename = figure_filename, plot=fig, height=10, width=10, dpi=150)
+
+
+site = 'bouldinalfalfa'
+year = 2018
+fig = make_timeseries_figure(site, year)
+figure_filename = paste0('./manuscript/figures/fig5-timeseries-',site,'-',year,'.pdf')
+ggsave(filename = figure_filename, plot=fig, height=10, width=10, dpi=150)
+
+site = 'cafcookeastltar01'
+year = 2018
+fig = make_timeseries_figure(site, year)
+figure_filename = paste0('./manuscript/figures/fig6-timeseries-',site,'-',year,'.pdf')
+ggsave(filename = figure_filename, plot=fig, height=10, width=10, dpi=150)
+
+site = 'NEON.D06.KONA.DP1.00042'
+year = 2017
+fig = make_timeseries_figure(site, year)
+figure_filename = paste0('./manuscript/figures/fig7-timeseries-',site,'-',year,'.pdf')
+ggsave(filename = figure_filename, plot=fig, height=10, width=10, dpi=150)
 
 
 #--------------------------------------------
 # make timeseries figures for *all* site years
 #--------------------------------------------
 
-site_years = original_predictions %>%
-  group_by(phenocam_name, year) %>%
-  summarise(n_days = n_distinct(date)) %>%
-  ungroup() %>%
-  filter(n_days >= 250)
-
-for(i in 1:nrow(site_years)){
-  #for(i in sample(1:200,5)){
-  site = site_years$phenocam_name[i]
-  year = site_years$year[i]
-  fig = make_timeseries_figure(phenocam_to_plot = site,
-                               year_to_plot     = year)
-  
-  figure_folder = './prediction_timeseries_figures_hmm//'
-  figure_filename = paste0('timeseries-',site,'-',year,'.png')
-  ggsave(paste0(figure_folder, figure_filename), fig, width=10, height=10, dpi=150)
-}
+# site_years = original_predictions %>%
+#   group_by(phenocam_name, year) %>%
+#   summarise(n_days = n_distinct(date)) %>%
+#   ungroup() %>%
+#   filter(n_days >= 250)
+# 
+# for(i in 1:nrow(site_years)){
+#   #for(i in sample(1:200,5)){
+#   site = site_years$phenocam_name[i]
+#   year = site_years$year[i]
+#   fig = make_timeseries_figure(phenocam_to_plot = site,
+#                                year_to_plot     = year)
+#   
+#   figure_folder = './prediction_timeseries_figures_hmm//'
+#   figure_filename = paste0('timeseries-',site,'-',year,'.png')
+#   ggsave(paste0(figure_folder, figure_filename), fig, width=10, height=10, dpi=150)
+# }
 
                
