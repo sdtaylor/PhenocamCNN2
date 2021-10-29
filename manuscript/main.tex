@@ -1,81 +1,100 @@
+%  LaTeX support: latex@mdpi.com 
+%  For support, please attach all files needed for compiling as well as the log file, and specify your operating system, LaTeX version, and LaTeX editor.
+
+%=================================================================
+\documentclass[remotesensing,article,submit,moreauthors,pdftex]{Definitions/mdpi} 
+
+% For posting an early version of this manuscript as a preprint, you may use "preprints" as the journal and change "submit" to "accept". The document class line would be, e.g., \documentclass[preprints,article,accept,moreauthors,pdftex]{mdpi}. This is especially recommended for submission to arXiv, where line numbers should be removed before posting. For preprints.org, the editorial staff will make this change immediately prior to posting.
 
 
-\documentclass{article}
-\usepackage[utf8]{inputenc}
-\usepackage{authblk}
-\usepackage{setspace}
-\usepackage[margin=1.25in]{geometry}
-\usepackage{graphicx}
+
+%=================================================================
+% MDPI internal commands
+\firstpage{1} 
+\makeatletter 
+\setcounter{page}{\@firstpage} 
+\makeatother
+\pubvolume{1}
+\issuenum{1}
+\articlenumber{0}
+\pubyear{2021}
+\copyrightyear{2020}
+%\externaleditor{Academic Editor: Firstname Lastname} % For journal Automation, please change Academic Editor to "Communicated by"
+\datereceived{} 
+\dateaccepted{} 
+\datepublished{} 
+\hreflink{https://doi.org/} % If needed use \linebreak
+%------------------------------------------------------------------
+% The following line should be uncommented if the LaTeX file is uploaded to arXiv.org
+%\pdfoutput=1
+
+%=================================================================
+% Add packages and commands here. The following packages are loaded in our class file: fontenc, inputenc, calc, indentfirst, fancyhdr, graphicx, epstopdf, lastpage, ifthen, lineno, float, amsmath, setspace, enumitem, mathpazo, booktabs, titlesec, etoolbox, tabto, xcolor, soul, multirow, microtype, tikz, totcount, changepage, paracol, attrib, upgreek, cleveref, amsthm, hyphenat, natbib, hyperref, footmisc, url, geometry, newfloat, caption
+
+%=================================================================
+%% Please use the following mathematics environments: Theorem, Lemma, Corollary, Proposition, Characterization, Property, Problem, Example, ExamplesandDefinitions, Hypothesis, Remark, Definition, Notation, Assumption
+%% For proofs, please use the proof environment (the amsthm package is loaded by the MDPI class).
+
+%=================================================================
+% Full title of the paper (Capitalized)
+\Title{Deep Learning Models For Identifying Crop and Field Attributes from Near Surface Cameras}
+
+% MDPI internal command: Title for citation in the left column
+\TitleCitation{PhenoCam Deep Learning}
+
+% Author Orchid ID: enter ID or remove command
+\newcommand{\orcidauthorA}{0000-0002-6178-6903} % Add \orcidA{} behind the author's name
+\newcommand{\orcidauthorB}{0000-0002-1252-6013} % Add \orcidB{} behind the author's name
+
+% Authors, for the paper (add full first names)
+\Author{Shawn D Taylor $^{1,2,*}$\orcidA{}, Dawn M Browning $^{1}$\orcidB{}}
+
+% MDPI internal command: Authors, for metadata in PDF
+\AuthorNames{Shawn D Taylor, Dawn M Browning}
+
+% MDPI internal command: Authors, for citation in the left column
+\AuthorCitation{Taylor, SD; Browning DM}
+% If this is a Chicago style journal: Lastname, Firstname, Firstname Lastname, and Firstname Lastname.
+
+% Affiliations / Addresses (Add [1] after \address if there is only one affiliation.)
+\address{%
+$^{1}$ \quad US Department of Agriculture, Agricultural Research Service, Jornada Experimental Range, New Mexico State University, Las Cruces, New Mexico, 88003, USA;\\
+$^{2}$ \quad Oak Ridge Institute for Science and Education (ORISE), Oak Ridge, Tennessee, 37830, USA}
+
+% Contact information of the corresponding author
+\corres{Correspondence: shawn.taylor@usda.gov}
+
+%\simplesumm{} % Simple summary
+
+%\conference{} % An extended version of a conference paper
+
+% Abstract (Do not insert blank lines, i.e. \\) 
+\abstract{Near surface cameras, such as those in the PhenoCam network, are a common source of ground truth data in modelling and remote sensing studies. Despite having locations across numerous agricultural sites, few studies have used near surface cameras to track the unique phenology of croplands. Due to management activities, crops do not have a natural vegetation cycle which many phenological extraction methods are based on. For example, a field may experience abrupt changes due to harvesting and tillage throughout the year. A single camera can also record several different plants due to crop rotations, fallow fields, and cover crops. Current methods to estimate phenology metrics from image time series compress all image information into a relative greenness metric, which discards a large amount of contextual information. This can include the type of crop present, whether snow or water is present on the field, the crop phenology, or whether a field lacking green plants consists of bare soil, fully senesced plants, or plant residue. Here we developed a modelling workflow to create a daily time series of crop type and phenology, while also accounting for other factors such as obstructed images and snow covered fields. We used a mainstream deep learning image classification model, VGG16. Deep learning classification models do not have a temporal component, so to account for temporal correlation among images our workflow incorporates a hidden markov model in the post-processing. The initial image classification model had out of sample F1 scores of 0.83-0.85, which improved to 0.86-0.91 after all post-processing steps. The resulting time series show the progression of crops from emergence to harvest, and can serve as a daily, local scale dataset of field states and phenological stages for agricultural research.}
+
+% Keywords
+\keyword{crop phenology; PhenoCam; VGG16; hidden markov model; time series; LTAR} 
+
+% The fields PACS, MSC, and JEL may be left empty or commented out if not applicable
+%\PACS{J0101}
+%\MSC{}
+%\JEL{}
+
 \graphicspath{ {./figures/} }
-\usepackage{subcaption}
-\usepackage{amsmath}
-\usepackage{lineno}
-%\linenumbers
-
-% this ensures figures are placed within sections
-\usepackage[section]{placeins}
-
-% for html links
-\usepackage{hyperref}
-
-%%%%%% Bibliography %%%%%%
-\usepackage{natbib}
-\bibliographystyle{agu}
-\setcitestyle{authoryear, open={(},close={)}}
-
-%%%%%% Title %%%%%%
-% Full titles can be a maximum of 200 characters, including spaces. 
-% Title Format: Use title case, capitalizing the first letter of each word, except for certain small words, such as articles and short prepositions
-\title{Deep learning models for identifying crop and field attributes from near surface cameras}
-
-%%%%%% Authors %%%%%%
-% Authors should be listed in order of contribution to the paper, by first name, then middle initial (if any), followed by last name.
-% Authors should be listed in the order in which they will appear in the published version if the manuscript is accepted. 
-% Use an asterisk (*) to identify the corresponding author, and be sure to include that person’s e-mail address. Use symbols (in this order: †, ‡, §, ||, ¶, #, ††, ‡‡, etc.) for author notes, such as present addresses, “These authors contributed equally to this work” notations, and similar information.
-% You can include group authors, but please include a list of the actual authors (the group members) in the Supplementary Materials.
-\author[1,2*]{Shawn D. Taylor}
-\author[1]{Dawn M. Browning}
-
-%%%%%% Affiliations %%%%%%
-\affil[1]{US Department of Agriculture, Agricultural Research Service, Jornada Experimental Range, New Mexico State University, Las Cruces, New Mexico, 88003, USA}
-\affil[2]{Oak Ridge Institute for Science and Education (ORISE), Oak Ridge, Tennessee, 37830, USA}
-\affil[*]{Corresponding author. Email: shawn.taylor@usda.gov}
-
-
-%%%%%% Date %%%%%%
-% Date is optional
-\date{}
-
-%%%%%% Spacing %%%%%%
-% Use paragraph spacing of 1.5 or 2 (for double spacing, use command \doublespacing)
-\onehalfspacing
 
 \begin{document}
-
-\maketitle
-
-Keywords: crop phenology; PhenoCam; VGG16; hidden markov model; time series; LTAR
-
-%%%%%% Abstract %%%%%%
-\begin{abstract}
-Near surface cameras, such as those in the PhenoCam network, are a common source of ground truth data in modelling and remote sensing studies. Despite having locations across numerous agricultural sites, few studies have used near surface cameras to track the unique phenology of croplands. Due to management activities, crops do not have a natural vegetation cycle which many phenological extraction methods are based on. For example, a field may experience abrupt changes due to harvesting and tillage throughout the year. A single camera can also record several different plants due to crop rotations, fallow fields, and cover crops. Current methods to estimate phenology metrics from image time series compress all image information into a relative greenness metric, which discards a large amount of contextual information. This can include the type of crop present, whether snow or water is present on the field, the crop phenology, or whether a field lacking green plants consists of bare soil, fully senesced plants, or plant residue. 
-Here we developed a modelling workflow to create a daily time series of crop type and phenology, while also accounting for other factors such as obstructed images and snow covered fields. We used a mainstream deep learning image classification model, VGG16. Deep learning classification models do not have a temporal component, so to account for temporal correlation among images our workflow incorporates a hidden markov model in the post-processing. The initial image classification model had out of sample F1 scores of 0.83-0.85, which improved to 0.86-0.91 after all post-processing steps. The resulting time series show the progression of crops from emergence to harvest, and can serve as a daily, local scale dataset of field states and phenological stages for agricultural research.
-\end{abstract}
-
-%%%%%% Main Text %%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Introduction}
 The timing of planting, emergence, maturity, and harvest of crops affects the yield and long-term sustainability of croplands, thus tracking crop phenology has numerous interested parties from local to national levels. Remotely sensed data is an important data source for tracking crop phenology, and other attributes, from the field to global scales \citep{weiss2020}. Estimating crop phenology from remotely sensed data is difficult since crops do not follow the same patterns as natural vegetation. Harvest may happen when crops are still green, and multiple harvests in a single year will result in several "peaks" in greenness. Crop rotations result in different crop types year to year, which affects the relative greenness and derived phenology metrics \citep{gao2017}. A primary limitation for improving satellite remote sensing based crop phenology models is a lack of widespread ground truth data \citep{gao-zhang2021}. Near-surface cameras used in the PhenoCam network offer a novel solution to this need for local-scale crop management information. Images from near-surface cameras can document the date of emergence, maturity, harvest, and tillage at the field scale with a daily temporal resolution \citep{hufkens2019}.
 
-Automatically extracting cropland attributes and phenological information from PhenoCam imagery is difficult. The primary method to estimate phenological metrics with PhenoCam data uses the direction and amplitude of a greenness metric (the green chromatic coordinate, $Gcc$) of regions of interest in the camera field of view \citep{richardson2018a, seyednasrollah2019b-scidata}. These metrics are well correlated with crop emergence and maturity, but cannot be used to directly identify other attributes such as crop type, flowering, or the presence of crop residue \citep{browning2021}. Deep learning models provide a straightforward method for identifying information in images, and can potentially identify phenological states directly as opposed to inferring them from relative greenness in the  images. Studies have successfully used deep learning image classification models to identify and count animals \citep{weinstein2018, norouzzadeh2018}, classify animal movement \citep{conway2021}, and identify the phenological stage \citep{correia2020}, species \citep{jones2020}, or stressors \citep{ghosal2018} of individual plants. Deep learning has been used previously  with PhenoCams to identify images with snow cover with up to 98\% accuracy \citep{kosmala2016}.
+Automatically extracting cropland attributes and phenological information from PhenoCam imagery is difficult. The primary method to estimate phenological metrics with PhenoCam data uses the direction and amplitude of a greenness metric (the green chromatic coordinate, $Gcc$) of regions of interest in the camera field of view \citep{richardson2018a, seyednasrollah2019b-scidata}. These metrics are well correlated with crop emergence and maturity, but cannot be used to directly identify other attributes such as crop type, flowering, or the presence of crop residue \citep{browning2021}. Deep learning models provide a straightforward method for identifying information in images \citep{borowiec2021}, and can potentially identify phenological states directly as opposed to inferring them from relative greenness in the  images. Studies have successfully used deep learning image classification models to identify and count animals \citep{weinstein2018, norouzzadeh2018}, classify animal movement \citep{conway2021}, and identify the phenological stage \citep{correia2020}, species \citep{jones2020}, or stressors \citep{ghosal2018} of individual plants. Deep learning has been used previously  with PhenoCams to identify images with snow cover with up to 98\% accuracy \citep{kosmala2016}.
 
 In agriculture, deep learning classification of near surface images, either from fixed or handheld cameras, has primarily been used for weed and crop disease detection \citep{benos2021}. Few studies have used deep learning for the classification of crop and field attributes (e.g. \cite{yalcin2017, han-shi2021}) and to our knowledge no study has applied deep learning methods at cropland sites in the PhenoCam image archive \citep{richardson2019}. 
 
 Here we use images from 55 agricultural cameras in the PhenoCam network to build a classification model for identifying cropland phenological states. The database includes images with a variety of real-world conditions across several crop types (Figure~\ref{fig1}). We used a generalized classification scheme with 21 classes across 3 mutually exclusive categories, ranging from emergence to post-harvest residue. We also included classes for crop type and factors such as flooded or snow covered fields. Deep learning models designed for image classification do not have a temporal component, so we use a hidden markov model in the classification post-processing to account for the temporal correlation of daily camera time series. Results show the feasibility of a daily, local scale dataset of field states and phenological stages for agricultural research.
 
-\begin{figure}[!ht]
-    \centering
-    \includegraphics[width=0.95\textwidth]{figures/fig1_example_images.jpg}
+\begin{figure}[H]
+    \includegraphics[width=14.5cm]{fig1_example_images.jpg}
     \caption{Example images from the PhenoCam network used in this study. The images are from the cameras arsope3ltar on Sep. 17, 2018 (A), cafcookwestltar01 on Aug. 15, 2017 (B), kelloggcorn on Nov. 27, 2018 (C), arsltarmdcr on Aug. 28, 2017 (D), mandanh5 on June 27, 2017 (E),  arsgacp1 on Aug. 25, 2016 (F), NEON.D06.KONA.DP1.00033 on Dec. 24, 2017 (G), hawbeckereddy on Nov. 26, 2015 (H), and bouldinalfalfa on Oct. 22, 2019 (I).
 }
     \label{fig1}
@@ -88,8 +107,9 @@ We used PhenoCam images from agricultural sites to train an image classification
 
 Initial image classifications were organized into 21 classes across three categories of Dominant Cover, Crop Type, and Crop Status (Table 1). The categories are each mutually exclusive such that any single image can be independently classified into a single class within each category. This allows finer grained classification given an array of Crop Types, and more flexibility in classifying crop phenological stages. For example, it would be informative for remote sensing models to know the exact date of crop emergence, but also that on the specified date and for several days to weeks after the feld is still predominantly bare soil. The first category, Dominant Cover, is the predominant class within the field of view. The Crop Type category represents the four predominant crops in the dataset (corn, wheat/barley, soybean, and alfalfa). Wheat and barley are combined into a single category as they are difficult to discern in images. The unknown Crop Type class is used during emergence when an exact identification is impossible. The other Crop Type class represents all other crops, including fallow fields, besides the four predominant ones. The stages of the Crop Status category are loosely based on BBCH descriptions \citep{meier1997}, but generalized to be applicable across a variety of crops and what is discernible. The Flowers stage is used for identifying tassels on corn or seed head on wheat or barely since no other reproductive structures were visible in the images. Thus, crop types other than corn and wheat/barley do not have any images annotated as Flowers.
 
-\begin{table}[]
-\begin{tabular}{|p{2cm}|p{3cm}|p{2cm}|p{6cm}|}
+\begin{table}[H]
+\caption{Class descriptions used in the classification model.}
+\begin{tabular}{|p{2cm}|p{3cm}|p{2cm}|p{5cm}|}
 \hline
 Category       & Class              & Used in final product & Description                                                                                          \\ \hline
 Dominant Cover & Blurry             & No                    & Image blurry, out of focus, or otherwise obscured.                                                   \\ \hline
@@ -114,8 +134,7 @@ Crop Status    & Blurry             & No                    & Image blurry, out 
                & Fully senesced     & Yes                   & 90\% or more of visible plants are fully senesced.                                                   \\ \hline
                & No crop            & Yes                   & No crop present (eg. a plowed field or completely snow covered)                                      \\ \hline
 \end{tabular}
-\caption{Class descriptions used in the classification model.}
-\label{tab:table1}
+\label{table1}
 \end{table}
 
 After annotation we excluded some images based on low prevalence of some category combinations. For example, only 8 images had the combined combination of Soil, Unknown Plant, and Senescing for the Dominant Cover, Crop Type, and Crop status categories, respectively. When a unique combination of the three categories had less than 40 total images, all images representing that combination were excluded from the model fitting. This resulted in 255 annotated images, from the original 8,270, being excluded. A total of 8,015 annotated images were available for model fitting.
@@ -124,15 +143,16 @@ We used mid-day images in the annotation stage and leveraged more of the PhenoCa
 
 \subsection{Image Classification Model}
 
-We used the VGG16 model in the Keras python package to classify images into the 21 classes (Table 1)\citep{simonyan2014-VGG16, chollet2018-keras}. The model allows us to specify the hierarchical structure of the three categories, such that the predicted class probabilities for any image sum to one within each category. We held out 20\% of the images as a validation set. The validation set included all images from three cameras: arsmorris2, mandani2, and cafboydnorthltar01 totaling 10,172 images. It also included 8,124 randomly selected images from the remaining locations to obtain the full 20\%. This resulted in a validation sample size of 18,296 and a training sample size of 73,188. The VGG16 classification model was trained fully, as opposed to using transfer learning \citep{norouzzadeh2018}. We experimented with transfer learning, where a pre-trained model is fine-tuned using our own data, but found that training the model fully had better results. 
+We used the VGG16 model in the Keras python package to classify images into the 21 classes (Table~\ref{table1})\citep{simonyan2014-VGG16, chollet2018-keras}. The model allows us to specify the hierarchical structure of the three categories, such that the predicted class probabilities for any image sum to one within each category. We held out 20\% of the images as a validation set. The validation set included all images from three cameras: arsmorris2, mandani2, and cafboydnorthltar01 totaling 10,172 images. It also included 8,124 randomly selected images from the remaining locations to obtain the full 20\%. This resulted in a validation sample size of 18,296 and a training sample size of 73,188. The VGG16 classification model was trained fully, as opposed to using transfer learning \citep{norouzzadeh2018}. We experimented with transfer learning, where a pre-trained model is fine-tuned using our own data, but found that training the model fully had better results. 
 
 We resampled the 73,188 training images to 100,000 using weights proportional to the unique combinations among the three categories. For example, there were 4,407 images annotated as Vegetation, Corn, and Flowers for the three categories, but only 1,074 images annotated with Vegetation, Wheat, and Flowers. The images in the former class were given a lower weight in the resampling to reach 100,000 total training images. This allows for even sample sizes among classes and protects against the model being biased toward common classes. During model fitting the images are shuffled and transformed using random shifts and rotations such that the exact same image is never seen twice, which protects against over-fitting. We trained the model with an image resolution of 224x224 pixels using the Adams optimizer with a learning rate of 0.01 for 15 epochs, and an additional 5 epochs with a learning rate of 0.001.
 
 \subsection{Post-processing}
 
-After fitting, the VGG16 model was used to classify ~55k midday images from all agricultural PhenoCam sites , totalling approximately 170 site-years \citep{milliman2019-phenocam}. These classified images were then put through a post-processing routine to produce a final classification for each day (Table 2). First, for all dates marked as Snow in the Dominant Cover category, the Crop Type and Crop Status predictions were removed and gap-filled using linear interpolation from surrounding non-snow dates as long as the gap was 60 days or less. The reasoning behind this is during the constant snow cover of winter the crop, if any, likely remains unchanged. Next, any image marked as blurry was removed and the associated image date marked as missing across all three categories (Dominant Cover, Crop Type, Crop Status). Gaps of missing dates, up to 3 days, in the time series for each site were filled with a linear interpolation of the two bounding date probabilities for each of the remaining 18 classes. Probabilities across all dates were normalized across the remaining classes to account for removing the “Blurry” class. After this initial filtering the classification time series from the ~55k images were input into an hidden markov, and several additional post-processing steps, to produce the final time series. 
+After fitting, the VGG16 model was used to classify ~55k midday images from all agricultural PhenoCam sites , totalling approximately 170 site-years \citep{milliman2019-phenocam}. These classified images were then put through a post-processing routine to produce a final classification for each day (Table~\ref{table2}). First, for all dates marked as Snow in the Dominant Cover category, the Crop Type and Crop Status predictions were removed and gap-filled using linear interpolation from surrounding non-snow dates as long as the gap was 60 days or less. The reasoning behind this is during the constant snow cover of winter the crop, if any, likely remains unchanged. Next, any image marked as blurry was removed and the associated image date marked as missing across all three categories (Dominant Cover, Crop Type, Crop Status). Gaps of missing dates, up to 3 days, in the time series for each site were filled with a linear interpolation of the two bounding date probabilities for each of the remaining 18 classes. Probabilities across all dates were normalized across the remaining classes to account for removing the “Blurry” class. After this initial filtering the classification time series from the ~55k images were input into an hidden markov, and several additional post-processing steps, to produce the final time series. 
 
-\begin{table}[]
+\begin{table}[H]
+\caption{The post-processing steps performed on the VGG16 model predictions.}
 \centering
 \begin{tabular}{|p{12cm}|}
 \hline
@@ -145,13 +165,12 @@ After fitting, the VGG16 model was used to classify ~55k midday images from all 
 7. Mark crop sequences as unknown for sequences 60 days or less, where the most common Crop State was emergence.                             \\ \hline
 8. Mark crop sequences as unknown when the highest cumulative probability within the sequence was No Crop.                                   \\ \hline
 \end{tabular}
-\caption{The post-processing steps performed on the VGG16 model predictions.}
-\label{tab:table2}
+\label{table2}
 \end{table}
 
 Out-of-the box image classification models such as VGG16 have no temporal component. Every image is treated as an observation independent of temporally adjacent images. Thus mis-classification of images can lead to noisy time series and improbable transitions between classes. To correct for this we used a hidden markov model (HMM) to reduce the day-to-day variation and remove improbable transitions \citep{esmael2012, wehmann2015}. HMM’s are state-space models which combine a latent “true” state of a process with an observation model. The latent state evolves dynamically where every timestep is a discrete state which depends only on the state of the previous timestep, and where the probability of moving from one state to another is decided by a transition matrix. The observation model is a timeseries of the same length where every observed state depends only on the latent state of the same timestep. Given a latent state, all observed states have a non-zero probability of being observed.
 
-We used two HMMs, one for Dominant Cover and another for Crop Status, each with a daily timestep. Only sequences with at least 60 continuous days, after the gap-filling from Snow and Blurry dates described above, were processed with the HMM. For the observation model within each HMM we used the direct output from the classification step, which for each image date consisted of probabilities of the image belonging to each class in the respective category. The transition matrix describing the probabilities of the hidden state changing states from one day to the next was created manually for each HMM (Table S2-3). The probability of the hidden state staying the same between two dates was set as the highest (0.90 - 0.95) in all cases. In this way the hidden state only changes when there is strong evidence in the observation model, represented by continuous and high observed probabilities of a new state. Within the Dominant Cover category, transitions to other states besides the current one were set to equal values with one exception. Transition from Soil to Residue was set to 0 probability since residue can only be present after a crop has been harvested. Within Crop Status transitions between states were constrained to be biologically possible. Improbable transitions (e.g., from Emergence to Senescing in a single day) had probabilities of 0. Reproductive structures were not visible on all crops in images, so transitioning from the Growth stage directly to Senescing was allowed. Transitioning from either Senescing or Senesced to Growth was also allowed since this represents dormancy exit in overwintering crops such as winter wheat. Given observation probabilities and the transition matrices the most likely hidden state was predicted using the viterbi algorithm to produce the final time series across the Dominant Cover and Crop Status categories. 
+We used two HMMs, one for Dominant Cover and another for Crop Status, each with a daily timestep. Only sequences with at least 60 continuous days, after the gap-filling from Snow and Blurry dates described above, were processed with the HMM. For the observation model within each HMM we used the direct output from the classification step, which for each image date consisted of probabilities of the image belonging to each class in the respective category. The transition matrix describing the probabilities of the hidden state changing states from one day to the next was created manually for each HMM (Tables S2-3). The probability of the hidden state staying the same between two dates was set as the highest (0.90 - 0.95) in all cases. In this way the hidden state only changes when there is strong evidence in the observation model, represented by continuous and high observed probabilities of a new state. Within the Dominant Cover category, transitions to other states besides the current one were set to equal values with one exception. Transition from Soil to Residue was set to 0 probability since residue can only be present after a crop has been harvested. Within Crop Status transitions between states were constrained to be biologically possible. Improbable transitions (e.g., from Emergence to Senescing in a single day) had probabilities of 0. Reproductive structures were not visible on all crops in images, so transitioning from the Growth stage directly to Senescing was allowed. Transitioning from either Senescing or Senesced to Growth was also allowed since this represents dormancy exit in overwintering crops such as winter wheat. Given observation probabilities and the transition matrices the most likely hidden state was predicted using the viterbi algorithm to produce the final time series across the Dominant Cover and Crop Status categories. 
 
 For the Crop Type category the HMM methodology is less useful, since no day-to-day transitions between Crop Types are expected. Here we used the HMM output of Crop Status to identify each unique crop sequence, defined as all dates between any two “No Crop” classifications. For each unique crop sequence, we identified the associated Crop Type with the highest total probability within that sequence, and marked the entire sequence as that Crop Type. In this step we considered all Crop Type classes except “Unknown Plant”, which is used during the emergence stage when a plant is present but the exact type is unclear. This allows information later in the crop cycle, when Crop Type is more easily classified, to be propagated back to the emergence stage. Finally, we marked the final Crop Type as Unknown for some crop sequences in two instances: 1) when the length of a crop sequence is less than 60 days and the sequence was predominantly in the emergence stage, and 2) when the “No Cop” class was selected as the final Crop Type with the highest probability within a sequence. These two scenarios tended to occur when volunteer plants are growing sparsely on an otherwise bare field. 
 
@@ -180,9 +199,9 @@ Software packages used throughout the analysis include keras \citep{chollet2018-
 
 The overall F1 score, a summary statistic which incorporates recall and precision, was 0.90-0.92 for the training data across the three categories of Dominant Cover, Crop Type, and Crop Status (Figure~\ref{fig2}). The overall F1 score for validation data, which was not used in the model fitting, was 0.83-0.85 for the three categories. In the Dominant Cover category the vegetation class was the best performing overall with recall and precision of 0.97 and 0.93, respectively. Thus the classification model has a strong ability to discern when the camera field of view is or is not predominantly vegetation. When vegetation is not dominant the classifier is still moderately accurate, though there is confusion between soil and residue classes indicated by their recall scores (0.64-0.68). The precision of soil and residue was 0.61 and 0.82 for validation data, indicating that the classifier leaned toward residue.
 
-\begin{figure}[!ht]
+\begin{figure}[H]
     \centering
-    \includegraphics[width=0.95\textwidth]{figures/fig2_base_stats.pdf}
+    \includegraphics[width=14cm]{fig2_base_stats.pdf}
     \caption{Accuracy metrics for the VGG16 image classifier. The black and grey bars represent the validation and training datasets, respectively. The text indicates the respective metric value for validation, training, and class sample size in parentheses. The training and validation sample sizes are 80\% and 20\% of the total sample size, respectively. Overall indicates the average metric value for the respective category, weighted by sample size. All three metrics have a range of 0-1 where 1 equals a perfect prediction.}
     \label{fig2}
 \end{figure}
@@ -191,9 +210,9 @@ Excluding the blurry class, the worst precision for Crop Type was soybeans, with
 
 The blurry class had low recall and precision across all three categories, with values of 0.29-0.43 and 0.33-0.50 for validation data recall and precision, respectively. Combined with training data recall scores of 1.0, this indicates likely over-fitting of the blurry class in the classification model. We did not attempt to improve this further since the blurry image prevalence was extremely low. Additionally, when images were marked as blurry in the final dataset the final state was interpolated in the HMM post-processing step by accounting for the surrounding images.
 
-\begin{figure}[!ht]
+\begin{figure}[H]
     \centering
-    \includegraphics[width=0.95\textwidth]{figures/fig3_hmm_stats.pdf}
+    \includegraphics[width=14cm]{fig3_hmm_stats.pdf}
     \caption{Accuracy metrics for the classifications after post-processing. The black and grey bars represent the validation and training datasets, respectively. The text indicates the respective metric value for validation, training, and class sample size in parentheses. The training and validation sample sizes are 80\% and 20\% of the total sample size, respectively. Overall indicates the average metric value for the respective category, weighted by sample size. All three metrics have a range of 0-1 where 1 equals a perfect prediction. Differences between this and Figure 2 is the exclusion of the blurry and unknown plant classes, with total sample sizes reflecting this.}
     \label{fig3}
 \end{figure}
@@ -204,38 +223,38 @@ The validation data performance metrics after the post-processing steps either i
 
 Next we present four examples of the full classification and post-processing results using a single calendar year from four sites. They show the initial output of the classification model, as well as the capability of the HMM in removing high variation in the original VGG16 model prediction. The original VGG16 predictions are obtained by choosing the class with the maximum probability (MaxP) for each category and day. We compare them with insight gained from the full image time series available on the PhenoCam data portal \href{https://phenocam.sr.unh.edu}{https://phenocam.sr.unh.edu}. For example at the arsmorris2 site in central Minnesota, in the months March through June of 2020, there is uncertainty in whether the Dominant Cover of the field is Residue or Soil (Figure~\ref{fig4}A, MaxP). The HMM model resolved it to the Residue class for the three month period. From mid-June thru October there is high certainty that that vegetation is present, reflected in both the initial classifications (MaxP) and resulting HMM. The HMM model resolved the Crop Type as Corn (Figure~\ref{fig4}B). During June to October, the Crop Status progresses naturally through the different stages, and uncertainty arises only in October when fully senesced vegetation is confused with plant residue (Figure~\ref{fig4}C). 
 
-\begin{figure}[!ht]
+\begin{figure}[H]
     \centering
-    \includegraphics[width=0.95\textwidth]{figures/fig4-timeseries-arsmorris2-2020.pdf}
-    \caption{Classification results for the arsmorris2 site for the year 2020. The top two rows of each panel represent the final classification for either the daily maximum probability (MaxP) or the hidden markov model (HMM). The remaining rows in each panel represent the initial model classification for the respective class, where larger sizes represent higher probability.}
+    \includegraphics[width=14cm]{fig4-timeseries-arsmorris2-2020.pdf}
+    \caption{Classification results for the arsmorris2 site for the year 2020. The panels represent the results for the Dominant Cover (A), Crop Type (B), and Crop Status (C) categories. The top two rows of each panel represent the final classification for either the daily maximum probability (MaxP) or the hidden markov model (HMM). The remaining rows in each panel represent the initial model classification for the respective class, where larger sizes represent higher probability.}
     \label{fig4}
 \end{figure}
 
 
 Cropping systems with multiple harvests per season are challenging for remote sensing models. There were multiple harvests for the bouldinalfalfa site in northern California for the year 2018. Here an alfalfa field was persistent for the entire year with several harvests (Figure~\ref{fig5}A). During the intervals of regrowth after each harvest the Dominant Cover of the field was classified as Residue with emergence of an Unknown crop type (Figure~\ref{fig5}B). Once the plants matured then it was identified consistently as Alfalfa, which in the post-processing was back propagated in time for each crop sequence.
 
-\begin{figure}[!ht]
+\begin{figure}[H]
     \centering
-    \includegraphics[width=0.95\textwidth]{figures/fig5-timeseries-bouldinalfalfa-2018.pdf}
-    \caption{Classification results for the bouldinalfalfa site for the year 2018. The top two rows of each panel represent the final classification for either the daily maximum probability (MaxP) or the hidden markov model (HMM). The remaining rows in each panel represent the initial model classification for the respective class, where larger sizes represent higher probability.}
+    \includegraphics[width=14cm]{fig5-timeseries-bouldinalfalfa-2018.pdf}
+    \caption{Classification results for the bouldinalfalfa site for the year 2018. The panels represent the results for the Dominant Cover (A), Crop Type (B), and Crop Status (C) categories. The top two rows of each panel represent the final classification for either the daily maximum probability (MaxP) or the hidden markov model (HMM). The remaining rows in each panel represent the initial model classification for the respective class, where larger sizes represent higher probability.}
     \label{fig5}
 \end{figure}
 
 At the site cafcookeastltar01 in eastern Washington in the year 2018 there was a short residual crop of wheat in April (Figure~\ref{fig6}A). Since the plants were not allowed to grow into the summer, due to a new crop being planted, they were not positively identified and instead marked as Unknown Plant. From manual image interpretation, we know a crop of chickpeas was planted in May which grew until harvest in early September. Throughout the summer the model initially classifies this crop as wheat, soybean, or alfalfa. The post-processing correctly chose the Other Crop Type as the final class. In October and November there is confusion in the Dominant Cover category between soil and residue, even after post-processing. From the images we can conclude there was likely no activity in the field during this time, thus confusion likely stems from a moderate amount of residue on the field combined with low light conditions of this northern (47.7° latitude) site. 
 
-\begin{figure}[!ht]
+\begin{figure}[H]
     \centering
-    \includegraphics[width=0.95\textwidth]{figures/fig6-timeseries-cafcookeastltar01-2018.pdf}
-    \caption{Classification results for the cafcookeastltar01 site for the year 2018. The top two rows of each panel represent the final classification for either the daily maximum probability (MaxP) or the hidden markov model (HMM). The remaining rows in each panel represent the initial model classification for the respective class, where larger sizes represent higher probability. }
+    \includegraphics[width=14cm]{fig6-timeseries-cafcookeastltar01-2018.pdf}
+    \caption{Classification results for the cafcookeastltar01 site for the year 2018. The panels represent the results for the Dominant Cover (A), Crop Type (B), and Crop Status (C) categories. The top two rows of each panel represent the final classification for either the daily maximum probability (MaxP) or the hidden markov model (HMM). The remaining rows in each panel represent the initial model classification for the respective class, where larger sizes represent higher probability. }
     \label{fig6}
 \end{figure}
 
 Crops going into dormancy in the winter and resuming growth in the spring are accounted for in the post-processing routines as demonstrated by the Konza Agricultural site in the NEON network in 2017 (NEON.D06.KONA.DP1.00042, Figure~\ref{fig7}). A winter wheat crop (Figure~\ref{fig7}B), which was planted in the fall of 2016, resumed growth in February. The remainder of that crop life cycle proceeded normally until harvest in July (Figure~\ref{fig7}B). The crop type here is correctly classified as Unknown Plant by the classifier from January thru March here, since the plants were relatively small at this time. The correct classification of wheat began in March when the plants were large enough to confidently identify, and this was propagated back to the initial emergence in 2016. Additionally, the primary field at this site was harvested at the end of June 2017 (as seen in the original images), though the classification model indicated it happened mid-July (Figure~\ref{fig7}A). This was due to the foreground plants being removed in mid-July, while the primary field was harvested in June. 
 
-\begin{figure}[!ht]
+\begin{figure}[H]
     \centering
-    \includegraphics[width=0.95\textwidth]{figures/fig7-timeseries-NEON.D06.KONA.DP1.00042-2017.pdf}
-    \caption{Classification results for the NEON.D06.KONA.DP1.00042 site for the year 2017. The top two rows of each panel represent the final classification for either the daily maximum probability (MaxP) or the hidden markov model (HMM). The remaining rows in each panel represent the initial model classification for the respective class, where larger sizes represent higher probability.}
+    \includegraphics[width=14cm]{fig7-timeseries-NEON.D06.KONA.DP1.00042-2017.pdf}
+    \caption{Classification results for the NEON.D06.KONA.DP1.00042 site for the year 2017. The panels represent the results for the Dominant Cover (A), Crop Type (B), and Crop Status (C) categories. The top two rows of each panel represent the final classification for either the daily maximum probability (MaxP) or the hidden markov model (HMM). The remaining rows in each panel represent the initial model classification for the respective class, where larger sizes represent higher probability.}
     \label{fig7}
 \end{figure}
 
@@ -259,18 +278,53 @@ We observed some mis-classifications when field management activities are not un
 
 Instead of discarding blurry or obscured images we accounted for them directly in the modelling. This is ideal since real-time applications must account for such images without human intervention. The Blurry class across all three categories had high performance metrics for the training images, but with validation images it had the lowest performance among all classes. There are two possibilities for this low performance of this class. One is that the classification model was confident in classifying some partially obscured images as non-blurry where the human annotator was not (Figures S10-S11). Second was the low sample size of the blurry image class, which had less than 70 total mid-day images. This likely resulted in the over-fitting of the blurry class on the training images and resulting low performance among validation images. Obtaining more PhenoCam images which are blurry or where the field of view was obscured in some way would be beneficial, and could be obtained from the numerous non-agricultural sites. Regardless, the low accuracy of blurry images had little effect on the final results, since the final classification of any single day is determined by the joint classifications of all surrounding days in the post-processing. 
 
-Monitoring and assessing crop extent and status using a consistent, data-driven approach is essential to meeting the growing demand for food while meeting our sustainability goals in light of climate change. We formulated a workflow using a deep learning model applied to PhenoCam time series to generate a daily crop phenology time series for locations across the continental U.S. The workflow uses an HMM to account for the temporal correlation of daily images. The resulting outputs offer a ground truth to calibrate and refine existing models for mapping crop status and yield using satellite remote sensing. 
+\section{Conclusion}
 
-\section*{Acknowledgments}
-We thank Andrew Richardson and Koen Hufkens for feedback on our methodology. This research was a contribution from the Long-Term Agroecosystem Research (LTAR) network. LTAR is supported by the United States Department of Agriculture. DMB was supported by CRIS 3050-11210-009-00D. The authors acknowledge the USDA Agricultural Research Service (ARS) Big Data Initiative and SCINet high performance computing resources (https://scinet.usda.gov) and funding from the Scientific Computing Initiative (SCINet) Postdoctoral Fellow program to support SDT. Any use of trade, firm, or product names is for descriptive purposes only and does not imply endorsement by the U.S. Government. USDA is an equal opportunity provider and employer.
+Monitoring and assessing crop extent and status using a consistent, data-driven approach is essential to meeting the growing demand for food while meeting our sustainability goals in light of climate change. We formulated a workflow using a deep learning model applied to PhenoCam time series to generate a daily crop phenology time series for locations across the continental U.S. The workflow uses a hidden markov model to account for the temporal correlation of daily images. By using images from the full PhenoCam database our model workflow is more resilient since it can accommodate an array of real-world conditions. The resulting outputs offer a ground truth to calibrate and refine existing models for mapping crop status and yield using satellite remote sensing. 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\vspace{6pt} 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% optional
+\supplementary{The following are available online at \linksupplementary{s1}, Figure S1:  Locations of all PhenoCam sites used in the study, Figures S2-S11: Example classification output from the VGG16 classifier, Table S1: Site information for PhenoCams used in this study, Tables S2-S3: Transition matrices for the hidden markove models.}
+
+% Only for the journal Methods and Protocols:
+% If you wish to submit a video article, please do so with any other supplementary material.
+% \supplementary{The following are available at \linksupplementary{s1}, Figure S1: title, Table S1: title, Video S1: title. A supporting video article is available at doi: link.} 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\authorcontributions{Conceptualization, S.T. and D.B.; methodology, S.T.; formal analysis, S.T.;  writing---original draft preparation, S.T.; writing---review and editing,S.T. and D.B.; supervision, D.B.; funding acquisition, D.B. All authors have read and agreed to the published version of the manuscript.}
+
+\funding{D.B. was supported by the USDA, CRIS:3050-11210-009-00D}
+
+\dataavailability{All code and data to reproduce this analysis, as well as the final model predictions, are available in a Zenodo repository (\href{https://doi.org/10.5281/zenodo.5579797}{https://doi.org/10.5281/zenodo.5579797}).} 
+
+\acknowledgments{We thank Andrew Richardson and Koen Hufkens for feedback on our methodology. This research was a contribution from the Long-Term Agroecosystem Research (LTAR) network. LTAR is supported by the United States Department of Agriculture.  The authors acknowledge the USDA Agricultural Research Service (ARS) Big Data Initiative and SCINet high performance computing resources (https://scinet.usda.gov) and funding from the Scientific Computing Initiative (SCINet) Postdoctoral Fellow program to support SDT. Any use of trade, firm, or product names is for descriptive purposes only and does not imply endorsement by the U.S. Government. USDA is an equal opportunity provider and employer.
 
 We thank our many collaborators, including site PIs and technicians, for their efforts in support of PhenoCam. The development of PhenoCam Network has been funded by the Northeastern States Research Cooperative, NSF’s Macrosystems Biology program (awards EF-1065029 and EF-1702697), and DOE’s Regional and Global Climate Modeling program (award DE-SC0016011). AmeriFlux is sponsored by the U.S. Department of Energy’s Office of Science.
 
-This research was supported in part by an appointment to the Agricultural Research Service (ARS) Research Participation Program administered by the Oak Ridge Institute for Science and Education (ORISE) through an interagency agreement between the U.S. Department of Energy (DOE) and the U.S. Department of Agriculture (USDA). ORISE is managed by ORAU under DOE contract number DE-SC0014664.  All opinions expressed in this paper are the author's and do not necessarily reflect the policies and views of USDA, DOE, or ORAU/ORISE.
+This research was supported in part by an appointment to the Agricultural Research Service (ARS) Research Participation Program administered by the Oak Ridge Institute for Science and Education (ORISE) through an interagency agreement between the U.S. Department of Energy (DOE) and the U.S. Department of Agriculture (USDA). ORISE is managed by ORAU under DOE contract number DE-SC0014664.  All opinions expressed in this paper are the author's and do not necessarily reflect the policies and views of USDA, DOE, or ORAU/ORISE.}
+
+\conflictsofinterest{The authors declare no conflict of interest.} 
 
 
 
 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\reftitle{References}
+
+% Please provide either the correct journal abbreviation (e.g. according to the “List of Title Word Abbreviations” http://www.issn.org/services/online-services/access-to-the-ltwa/) or the full name of the journal.
+% Citations and References in Supplementary files are permitted provided that they also appear in the reference list here. 
+
+%=====================================
+% References, variant A: external bibliography
+%=====================================
+\externalbibliography{yes}
 \bibliography{refs.bib}
 
 \end{document}
+
