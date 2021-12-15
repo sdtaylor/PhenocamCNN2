@@ -197,14 +197,19 @@ original_classification_data %>%
   count(category, data_type, true_class, maxprob_class) %>%
   group_by(category) %>%
   complete(data_type, true_class, maxprob_class, fill=list(n=0)) %>%
-  ungroup() %>%
-  ggplot(aes(x=true_class, y=maxprob_class)) +
+  ungroup() %>% 
+  ggplot(aes(x=str_wrap(true_class,8), y=maxprob_class)) +
   geom_tile(size=0.5, color='black', alpha=0) + 
-  geom_text(aes(label=n)) +
+  geom_text(aes(label=n),size=5) +
   facet_wrap(category~data_type, scales='free',ncol=2) +
-  theme_minimal() +
+  theme_minimal(10) +
   theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_line(color='black'))
+        panel.grid.minor = element_line(color='black'),
+        axis.title = element_text(size=20),
+        strip.text = element_text(size=18),
+        axis.text = element_text(size=12, color='black'),
+        axis.text.x = element_text(angle=-45, hjust=0)) +
+  labs(x='True Class', y='Predicted class from VGG16 model')
 
 
 #-------------------------
@@ -281,3 +286,24 @@ hmm_stat_figure = hmm_prediction_stats %>%
   labs(x='Accuracy Metric Value')
 
 ggsave('./manuscript/figures/fig3_hmm_stats.pdf', plot=hmm_stat_figure, height=28, width=28, unit='cm', dpi=150)
+
+
+
+
+hmm_classification_data %>%
+  count(category, data_type, true_class, hmm_class) %>%
+  group_by(category) %>%
+  complete(data_type, true_class, hmm_class, fill=list(n=0)) %>%
+  ungroup() %>% 
+  ggplot(aes(x=str_wrap(true_class,8), y=hmm_class)) +
+  geom_tile(size=0.5, color='black', alpha=0) + 
+  geom_text(aes(label=n),size=5) +
+  facet_wrap(category~data_type, scales='free',ncol=2) +
+  theme_minimal(10) +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_line(color='black'),
+        axis.title = element_text(size=20),
+        strip.text = element_text(size=18),
+        axis.text = element_text(size=12, color='black'),
+        axis.text.x = element_text(angle=-45, hjust=0)) +
+  labs(x='True Class', y='Predicted class after post-processing')
