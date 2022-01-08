@@ -1,6 +1,8 @@
 This is the repository for the following study:
 
-Taylor, SD and Browning, DM, 2021. Deep learning models for identifying crop and field attributes from near surface cameras. bioRxiv. [https://doi.org/10.1101/2021.10.20.465168](https://doi.org/10.1101/2021.10.20.465168)
+Taylor, SD and Browning, DM, 2022. Classification of daily crop phenology in PhenoCams using deep learning and hidden markov models. bioRxiv. [https://doi.org/10.1101/2021.10.20.465168](https://doi.org/10.1101/2021.10.20.465168)  
+
+Note the initial version was titled "Deep learning models for identifying crop and field attributes from near surface cameras" and was changed during the review process.
 
 # File Structure
 ## A. Initial Preparation
