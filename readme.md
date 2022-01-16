@@ -1,6 +1,7 @@
 This is the repository for the following study:
 
-Taylor, SD and Browning, DM, 2022. Classification of daily crop phenology in PhenoCams using deep learning and hidden markov models. bioRxiv. [https://doi.org/10.1101/2021.10.20.465168](https://doi.org/10.1101/2021.10.20.465168)  
+Taylor S.D., Browning D.M. 2022. Classification of Daily Crop Phenology in PhenoCams Using Deep Learning and Hidden Markov Models. Remote Sensing. 14(2):286. [https://doi.org/10.3390/rs14020286](https://doi.org/10.3390/rs14020286) [[Preprint](https://doi.org/10.1101/2021.10.20.465168),
+[Data & Code Archive](https://doi.org/10.5281/zenodo.5579796)]  
 
 Note the initial version was titled "Deep learning models for identifying crop and field attributes from near surface cameras" and was changed during the review process.
 
@@ -59,7 +60,7 @@ The modelling workflow went as so.
     
 ## Data
 None of the phenocam images are in the repo but can be downloaded with the scripts in `phenocam_data_prep/`.  
-The following files are not in the github repo because they are too large, but can be found in the zenodo repo ([https://doi.org/10.5281/zenodo.5579797](https://doi.org/10.5281/zenodo.5579797))  
+The following files are not in the github repo because they are too large, but can be found in the zenodo repo ([https://doi.org/10.5281/zenodo.5579796](https://doi.org/10.5281/zenodo.5579796))  
 - `data/vgg16_v4_20epochs.h5` - this is the fitted keras classification model.
 - `data/vgg16_v4_20epochs_predictions.csv` - this contains the initial image classifications prior to post-processing.
 - `data/final_predictions.csv` - the final predictions after post-processing.
